@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening Pera Wallet…</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 24px;
+        }
+        .card {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 16px;
+            padding: 40px 32px;
+            max-width: 420px;
+            width: 100%;
+        }
+        .logo { font-size: 48px; margin-bottom: 16px; }
+        h1 { font-size: 22px; margin-bottom: 8px; color: #fff; }
+        p  { font-size: 15px; color: #aaa; line-height: 1.5; margin-bottom: 24px; }
+        .btn {
+            display: inline-block;
+            background: #2196f3;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .btn:hover { background: #1976d2; }
+        .note { font-size: 13px; color: #666; margin-top: 16px; }
+        .error { color: #ff6b6b; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">🐦</div>
+        <h1>Opening Pera Wallet…</h1>
+        <p>You are being redirected to complete your Puffin Swap transaction.</p>
+        <a id="openBtn" class="btn" href="#">Open in Pera Wallet</a>
+        <p class="note">If Pera doesn't open automatically, tap the button above.<br>Make sure Pera Wallet is installed on your device.</p>
+        <p id="errorMsg" class="note error" style="display:none;">
+            No wallet link found. Please return to Discord and try again.
+        </p>
+    </div>
+
+    <script>
+        const params  = new URLSearchParams(window.location.search);
+        const target  = params.get('to');
+        const btn     = document.getElementById('openBtn');
+        const errMsg  = document.getElementById('errorMsg');
+
+        if (target) {
+            const decoded = decodeURIComponent(target);
+            btn.href = decoded;
+            // Auto-redirect immediately
+            window.location.href = decoded;
+        } else {
+            btn.style.display = 'none';
+            errMsg.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
