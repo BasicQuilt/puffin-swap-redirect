@@ -224,12 +224,11 @@
     document.getElementById(stepId).className = 'step ' + state;
   }
 
-  function loadSwap() {
-    // All swap data is encoded directly in the URL — no server call needed.
-    const params  = new URLSearchParams(window.location.search);
-    const payload = params.get('d');
+  async function loadSwap() {
+    const params = new URLSearchParams(window.location.search);
+    const gistId = params.get('gist');
 
-    if (!payload) {
+    if (!gistId) {
       document.getElementById('status-box').style.display = 'none';
       document.getElementById('main-content').innerHTML =
         '<p style="text-align:center;padding:40px;color:var(--muted)">⚠️ Invalid swap link.<br>Please request a new one from Discord.</p>';
@@ -237,55 +236,66 @@
       return;
     }
 
-    let parsed;
     try {
-      parsed = JSON.parse(atob(decodeURIComponent(payload)));
-    } catch (e) {
-      showStatus('error', '⚠️ Swap link is malformed. Please request a new one from Discord.');
-      return;
-    }
+      // Fetch swap data from GitHub Gist API — always HTTPS, no mixed content
+      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: { 'Accept': 'application/vnd.github+json' },
+      });
+      if (!res.ok) throw new Error('Swap not found or expired');
 
-    encodedTxns = parsed.txns;
-    userAddress = parsed.addr;
+      const gist    = await res.json();
+      const content = gist.files?.['swap.json']?.content;
+      if (!content) throw new Error('Swap data missing from link');
 
-    document.getElementById('txn-list').innerHTML = encodedTxns.map(function(b64, i) {
-      const bytes  = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-      const txn    = algosdk.decodeUnsignedTransaction(bytes);
-      const isAlgo = txn.type === 'pay';
-      let label;
-      if (isAlgo) {
-        label = '100 ALGO payment';
-      } else if (txn.note && txn.note.length) {
-        label = new TextDecoder().decode(txn.note);
-      } else {
-        label = 'NFT transfer ' + (i + 1);
+      const data  = JSON.parse(content);
+      encodedTxns = data.txns;
+      userAddress = data.addr;
+
+      document.getElementById('txn-list').innerHTML = encodedTxns.map(function(b64, i) {
+        const bytes  = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
+        const txn    = algosdk.decodeUnsignedTransaction(bytes);
+        const isAlgo = txn.type === 'pay';
+        let label;
+        if (isAlgo) {
+          label = '100 ALGO payment';
+        } else if (txn.note && txn.note.length) {
+          label = new TextDecoder().decode(txn.note);
+        } else {
+          label = 'NFT transfer ' + (i + 1);
+        }
+        return '<div class="txn-row">' +
+          '<div class="dot' + (isAlgo ? ' algo' : '') + '"></div>' +
+          '<span>' + label + '</span>' +
+          '<small>TXN ' + (i + 1) + '</small>' +
+          '</div>';
+      }).join('');
+
+      document.getElementById('addr-display').textContent = userAddress;
+      document.getElementById('status-box').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      if (peraWallet) {
+        peraWallet.reconnectSession()
+          .then(function(accounts) {
+            if (accounts.length && accounts[0].toLowerCase() === userAddress.toLowerCase()) {
+              walletType   = 'pera';
+              activeWallet = peraWallet;
+              document.getElementById('btn-pera').classList.add('active');
+              const signBtn = document.getElementById('sign-btn');
+              signBtn.disabled    = false;
+              signBtn.textContent = 'Sign ' + encodedTxns.length + ' transactions in Pera';
+              setStep('step-connect', 'done');
+              setStep('step-sign',    'active');
+            }
+          })
+          .catch(function() {});
       }
-      return '<div class="txn-row">' +
-        '<div class="dot' + (isAlgo ? ' algo' : '') + '"></div>' +
-        '<span>' + label + '</span>' +
-        '<small>TXN ' + (i + 1) + '</small>' +
-        '</div>';
-    }).join('');
 
-    document.getElementById('addr-display').textContent = userAddress;
-    document.getElementById('status-box').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-
-    if (peraWallet) {
-      peraWallet.reconnectSession()
-        .then(function(accounts) {
-          if (accounts.length && accounts[0].toLowerCase() === userAddress.toLowerCase()) {
-            walletType   = 'pera';
-            activeWallet = peraWallet;
-            document.getElementById('btn-pera').classList.add('active');
-            const signBtn = document.getElementById('sign-btn');
-            signBtn.disabled    = false;
-            signBtn.textContent = 'Sign ' + encodedTxns.length + ' transactions in Pera';
-            setStep('step-connect', 'done');
-            setStep('step-sign',    'active');
-          }
-        })
-        .catch(function() {});
+    } catch (err) {
+      showStatus('error',
+        '⚠️ ' + err.message + '.<br><br>' +
+        'Please request a new swap link from Discord.'
+      );
     }
   }
 
