@@ -354,13 +354,9 @@
     document.getElementById('status-box').style.display = 'none';
 
     try {
-      const txns = encodedTxns.map(function(b64) {
+      const txnGroup = encodedTxns.map(function(b64) {
         const bytes = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-        return algosdk.decodeUnsignedTransaction(bytes);
-      });
-
-      const txnGroup = txns.map(function(txn) {
-        return { txn: txn, signers: [userAddress] };
+        return { txn: bytes, signers: [userAddress] };
       });
 
       setStep('step-sign', 'active');
