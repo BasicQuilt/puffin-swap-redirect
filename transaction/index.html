@@ -164,6 +164,10 @@
 
 <script>
   // ── Resolve wallet constructors ───────────────────────────────────────────
+  // vendor-bundle.js sets:
+  //   window.algosdk
+  //   window.peraWalletConnect  = { PeraWalletConnect }
+  //   window.deflyWalletConnect = { DeflyWalletConnect }
   function resolveConstructor(candidates) {
     for (var i = 0; i < candidates.length; i++) {
       var parts = candidates[i].split('.');
@@ -201,6 +205,7 @@
   }
   // ─────────────────────────────────────────────────────────────────────────
 
+  // algosdk is provided by vendor-bundle.js — same instance pera/defly use
   const ALGOD_URL = 'https://mainnet-api.algonode.cloud';
 
   let encodedTxns  = [];
@@ -222,6 +227,26 @@
     document.getElementById(stepId).className = 'step ' + state;
   }
 
+  // Decode a base64 transaction for display only — uses the bundle's algosdk
+  function txnLabel(b64, index) {
+    try {
+      const bytes = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
+      const txn   = algosdk.decodeUnsignedTransaction(bytes);
+      const isAlgo = txn.type === 'pay';
+      let label;
+      if (isAlgo) {
+        label = '100 ALGO payment';
+      } else if (txn.note && txn.note.length) {
+        label = new TextDecoder().decode(txn.note);
+      } else {
+        label = 'NFT transfer ' + (index + 1);
+      }
+      return { label, isAlgo };
+    } catch (e) {
+      return { label: 'Transaction ' + (index + 1), isAlgo: false };
+    }
+  }
+
   async function loadSwap() {
     const params = new URLSearchParams(window.location.search);
     const gistId = params.get('gist');
@@ -235,7 +260,6 @@
     }
 
     try {
-      // Fetch swap data from GitHub Gist API — always HTTPS, no mixed content
       const res = await fetch(`https://api.github.com/gists/${gistId}`, {
         headers: { 'Accept': 'application/vnd.github+json' },
       });
@@ -250,17 +274,7 @@
       userAddress = data.addr;
 
       document.getElementById('txn-list').innerHTML = encodedTxns.map(function(b64, i) {
-        const bytes  = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-        const txn    = algosdk.decodeUnsignedTransaction(bytes);
-        const isAlgo = txn.type === 'pay';
-        let label;
-        if (isAlgo) {
-          label = '100 ALGO payment';
-        } else if (txn.note && txn.note.length) {
-          label = new TextDecoder().decode(txn.note);
-        } else {
-          label = 'NFT transfer ' + (i + 1);
-        }
+        const { label, isAlgo } = txnLabel(b64, i);
         return '<div class="txn-row">' +
           '<div class="dot' + (isAlgo ? ' algo' : '') + '"></div>' +
           '<span>' + label + '</span>' +
@@ -352,9 +366,14 @@
     document.getElementById('status-box').style.display = 'none';
 
     try {
+      // Pass raw bytes directly — never decode with the page's algosdk.
+      // This avoids any Transaction class mismatch between the page and
+      // the wallet's internal algosdk version entirely.
       const txnGroup = encodedTxns.map(function(b64) {
-        const bytes = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-        return { txn: bytes, signers: [userAddress] };
+        return {
+          txn:     Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); }),
+          signers: [userAddress],
+        };
       });
 
       setStep('step-sign', 'active');
@@ -365,6 +384,7 @@
       setStep('step-submit', 'active');
       signBtn.textContent = '⏳ Submitting to Algorand…';
 
+      // Use algosdk from the bundle to submit
       const algodClient = new algosdk.Algodv2('', ALGOD_URL, 443);
       const { txId }    = await algodClient.sendRawTransaction(signedTxns).do();
       await algosdk.waitForConfirmation(algodClient, txId, 6);
