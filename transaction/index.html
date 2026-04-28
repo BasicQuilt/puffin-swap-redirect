@@ -6,10 +6,11 @@
   <title>Puffin Swap — Sign Transaction</title>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
+  <!-- global polyfill must come first — WalletConnect uses Node's `global` variable -->
   <script>var global = window;</script>
-  <script src="/vendor/algosdk.min.js"></script>
-  <script src="/vendor/pera-wallet.js"></script>
-  <script src="/vendor/defly-wallet.js"></script>
+  <script src="vendor/algosdk.min.js"></script>
+  <script src="vendor/pera-wallet.js"></script>
+  <script src="vendor/defly-wallet.js"></script>
 
   <style>
     :root {
