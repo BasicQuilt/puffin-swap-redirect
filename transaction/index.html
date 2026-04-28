@@ -166,9 +166,6 @@
 
 <script>
   // ── Resolve wallet constructors ───────────────────────────────────────────
-  // The pre-built IIFE bundles set:
-  //   window.peraWalletConnect  = { PeraWalletConnect }
-  //   window.deflyWalletConnect = { DeflyWalletConnect }
   function resolveConstructor(candidates) {
     for (var i = 0; i < candidates.length; i++) {
       var parts = candidates[i].split('.');
@@ -194,8 +191,8 @@
 
   if (!PeraWalletConnect || !DeflyWalletConnect) {
     var sb = document.getElementById('status-box');
-    sb.className  = 'status-box status-error';
-    sb.innerHTML  = '⚠️ Wallet scripts failed to load.<br>Please hard-refresh (Ctrl+Shift+R) and try again.<br><small>If this persists, contact an admin.</small>';
+    sb.className     = 'status-box status-error';
+    sb.innerHTML     = '⚠️ Wallet scripts failed to load.<br>Please hard-refresh (Ctrl+Shift+R) and try again.<br><small>If this persists, contact an admin.</small>';
     sb.style.display = 'block';
     console.error('[PuffinSwap] Wallet constructor resolution failed. Globals:', {
       peraWalletConnect:  window.peraWalletConnect,
@@ -207,10 +204,6 @@
   // ─────────────────────────────────────────────────────────────────────────
 
   const ALGOD_URL = 'https://mainnet-api.algonode.cloud';
-
-  const params  = new URLSearchParams(window.location.search);
-  const swapId  = params.get('swapId');
-  const apiBase = (params.get('api') || '').replace(/\/$/, '');
 
   let encodedTxns  = [];
   let userAddress  = '';
@@ -231,8 +224,12 @@
     document.getElementById(stepId).className = 'step ' + state;
   }
 
-  async function loadSwap() {
-    if (!swapId || !apiBase) {
+  function loadSwap() {
+    // All swap data is encoded directly in the URL — no server call needed.
+    const params  = new URLSearchParams(window.location.search);
+    const payload = params.get('d');
+
+    if (!payload) {
       document.getElementById('status-box').style.display = 'none';
       document.getElementById('main-content').innerHTML =
         '<p style="text-align:center;padding:40px;color:var(--muted)">⚠️ Invalid swap link.<br>Please request a new one from Discord.</p>';
@@ -240,61 +237,55 @@
       return;
     }
 
+    let parsed;
     try {
-      const res = await fetch(apiBase + '/swap/' + swapId);
-      if (!res.ok) throw new Error('Swap not found or expired');
-      const data = await res.json();
+      parsed = JSON.parse(atob(decodeURIComponent(payload)));
+    } catch (e) {
+      showStatus('error', '⚠️ Swap link is malformed. Please request a new one from Discord.');
+      return;
+    }
 
-      encodedTxns = data.encodedTxns;
-      userAddress = data.userAddress;
+    encodedTxns = parsed.txns;
+    userAddress = parsed.addr;
 
-      document.getElementById('txn-list').innerHTML = encodedTxns.map(function(b64, i) {
-        const bytes  = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-        const txn    = algosdk.decodeUnsignedTransaction(bytes);
-        const isAlgo = txn.type === 'pay';
-        let label;
-        if (isAlgo) {
-          label = '100 ALGO payment';
-        } else if (txn.note && txn.note.length) {
-          label = new TextDecoder().decode(txn.note);
-        } else {
-          label = 'NFT transfer ' + (i + 1);
-        }
-        return '<div class="txn-row">' +
-          '<div class="dot' + (isAlgo ? ' algo' : '') + '"></div>' +
-          '<span>' + label + '</span>' +
-          '<small>TXN ' + (i + 1) + '</small>' +
-          '</div>';
-      }).join('');
-
-      document.getElementById('addr-display').textContent = userAddress;
-      document.getElementById('status-box').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
-
-      if (peraWallet) {
-        peraWallet.reconnectSession()
-          .then(function(accounts) {
-            if (accounts.length && accounts[0].toLowerCase() === userAddress.toLowerCase()) {
-              walletType   = 'pera';
-              activeWallet = peraWallet;
-              document.getElementById('btn-pera').classList.add('active');
-              const signBtn = document.getElementById('sign-btn');
-              signBtn.disabled    = false;
-              signBtn.textContent = 'Sign ' + encodedTxns.length + ' transactions in Pera';
-              setStep('step-connect', 'done');
-              setStep('step-sign',    'active');
-            }
-          })
-          .catch(function() {});
+    document.getElementById('txn-list').innerHTML = encodedTxns.map(function(b64, i) {
+      const bytes  = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
+      const txn    = algosdk.decodeUnsignedTransaction(bytes);
+      const isAlgo = txn.type === 'pay';
+      let label;
+      if (isAlgo) {
+        label = '100 ALGO payment';
+      } else if (txn.note && txn.note.length) {
+        label = new TextDecoder().decode(txn.note);
+      } else {
+        label = 'NFT transfer ' + (i + 1);
       }
+      return '<div class="txn-row">' +
+        '<div class="dot' + (isAlgo ? ' algo' : '') + '"></div>' +
+        '<span>' + label + '</span>' +
+        '<small>TXN ' + (i + 1) + '</small>' +
+        '</div>';
+    }).join('');
 
-    } catch (err) {
-      showStatus('error',
-        '⚠️ ' + err.message + '.<br>' +
-        '<small style="font-family:monospace;font-size:10px;word-break:break-all">' +
-        'Tried: ' + apiBase + '/swap/' + swapId + '</small><br><br>' +
-        'Please request a new swap link from Discord.'
-      );
+    document.getElementById('addr-display').textContent = userAddress;
+    document.getElementById('status-box').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+
+    if (peraWallet) {
+      peraWallet.reconnectSession()
+        .then(function(accounts) {
+          if (accounts.length && accounts[0].toLowerCase() === userAddress.toLowerCase()) {
+            walletType   = 'pera';
+            activeWallet = peraWallet;
+            document.getElementById('btn-pera').classList.add('active');
+            const signBtn = document.getElementById('sign-btn');
+            signBtn.disabled    = false;
+            signBtn.textContent = 'Sign ' + encodedTxns.length + ' transactions in Pera';
+            setStep('step-connect', 'done');
+            setStep('step-sign',    'active');
+          }
+        })
+        .catch(function() {});
     }
   }
 
