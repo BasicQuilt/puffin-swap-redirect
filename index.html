@@ -1,411 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Puffin Swap — Sign Transaction</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-
-  <!-- global polyfill must come first — WalletConnect uses Node's `global` variable -->
-  <script>var global = window;</script>
-  <script src="vendor/vendor-bundle.js"></script>
-
-  <style>
-    :root {
-      --bg:      #080b14; --surface: #0e1220; --border:  #1e2640;
-      --border2: #2a3560; --text:    #c8d0e8; --muted:   #5a6480;
-      --accent:  #4f8ef7; --success: #22c97a; --warn:    #f5a623;
-      --mono:    'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body {
-      font-family: var(--sans); background: var(--bg); color: var(--text);
-      min-height: 100vh; display: flex; align-items: flex-start;
-      justify-content: center; padding: 24px 16px 48px;
-    }
-    body::before {
-      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-      background-image:
-        linear-gradient(rgba(79,142,247,.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(79,142,247,.04) 1px, transparent 1px);
-      background-size: 40px 40px;
-    }
-    .wrap { position:relative; z-index:1; width:100%; max-width:440px; }
-    .header { text-align:center; padding:32px 0 24px; }
-    .logo-ring {
-      display:inline-flex; align-items:center; justify-content:center;
-      width:64px; height:64px; border-radius:50%;
-      border:1.5px solid var(--border2); background:var(--surface);
-      font-size:32px; margin-bottom:14px;
-      box-shadow:0 0 32px rgba(79,142,247,.12);
-    }
-    .header h1 { font-family:var(--mono); font-size:18px; font-weight:700; color:#fff; }
-    .header p  { font-size:13px; color:var(--muted); margin-top:4px; }
-
-    .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:12px; }
-    .card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); }
-    .card-title  { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-
-    .txn-list { padding:14px 18px 16px; display:flex; flex-direction:column; gap:6px; }
-    .txn-row  { display:flex; align-items:center; gap:8px; font-size:13px; padding:6px 0; border-bottom:1px solid var(--border); }
-    .txn-row:last-child { border-bottom:none; }
-    .txn-row .dot { width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
-    .txn-row .dot.algo { background:var(--warn); }
-    .txn-row span { color:#fff; font-weight:500; flex:1; }
-    .txn-row small { font-family:var(--mono); font-size:10px; color:var(--muted); }
-
-    .addr-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:12px; }
-    .addr-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:5px; }
-    .addr-value { font-family:var(--mono); font-size:11px; color:#8899cc; word-break:break-all; line-height:1.5; }
-
-    .action-section { padding:4px 18px 18px; display:flex; flex-direction:column; gap:8px; }
-    .sign-btn {
-      width:100%; padding:16px; border-radius:12px; border:none;
-      font-family:var(--sans); font-size:15px; font-weight:600;
-      background:var(--accent); color:#fff; cursor:pointer;
-      box-shadow:0 4px 20px rgba(79,142,247,.3); transition:all .2s ease;
-    }
-    .sign-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 28px rgba(79,142,247,.4); }
-    .sign-btn:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; box-shadow:none; }
-    .sign-btn.success { background:var(--success); box-shadow:0 4px 20px rgba(34,201,122,.3); }
-
-    .wallet-row { display:flex; gap:8px; }
-    .wallet-btn {
-      flex:1; padding:11px; border-radius:10px; border:1px solid var(--border2);
-      background:var(--bg); color:var(--text); font-family:var(--sans);
-      font-size:13px; font-weight:500; cursor:pointer; transition:all .15s;
-    }
-    .wallet-btn:hover { border-color:var(--accent); color:var(--accent); }
-    .wallet-btn.active { border-color:var(--success); color:var(--success); background:rgba(34,201,122,.06); }
-
-    .status-box { padding:14px 18px; border-radius:12px; border:1px solid; font-size:13px; margin-bottom:12px; line-height:1.6; }
-    .status-info    { background:rgba(79,142,247,.08); border-color:rgba(79,142,247,.3); color:#7fb3ff; }
-    .status-success { background:rgba(34,201,122,.08); border-color:rgba(34,201,122,.3); color:var(--success); }
-    .status-error   { background:rgba(255,80,80,.08);  border-color:rgba(255,80,80,.3);  color:#ff8080; }
-    .status-warn    { background:rgba(245,166,35,.08); border-color:rgba(245,166,35,.3); color:var(--warn); }
-
-    .step-indicator { display:flex; align-items:center; gap:8px; padding:16px 18px 14px; font-size:12px; color:var(--muted); font-family:var(--mono); }
-    .step { display:flex; align-items:center; gap:4px; }
-    .step-num { width:20px; height:20px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-size:10px; }
-    .step.done .step-num   { border-color:var(--success); color:var(--success); }
-    .step.active .step-num { border-color:var(--accent);  color:var(--accent);  }
-    .step.pending .step-num { border-color:var(--muted); }
-    .step-line { flex:1; height:1px; background:var(--border); }
-
-    .help { text-align:center; font-size:12px; color:var(--muted); padding:8px 0 4px; line-height:1.7; }
-    #main-content { display:none; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opening Pera Wallet…</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 24px;
+        }
+        .card {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 16px;
+            padding: 40px 32px;
+            max-width: 420px;
+            width: 100%;
+        }
+        .logo { font-size: 48px; margin-bottom: 16px; }
+        h1 { font-size: 22px; margin-bottom: 8px; color: #fff; }
+        p  { font-size: 15px; color: #aaa; line-height: 1.5; margin-bottom: 24px; }
+        .btn {
+            display: inline-block;
+            background: #2196f3;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            width: 100%;
+        }
+        .btn:hover { background: #1976d2; }
+        .note { font-size: 13px; color: #666; margin-top: 16px; }
+        .error { color: #ff6b6b; }
+    </style>
 </head>
 <body>
-<div class="wrap">
-
-  <div class="header">
-    <div class="logo-ring">🐦</div>
-    <h1>Puffin Swap</h1>
-    <p>Connect your wallet and sign once</p>
-  </div>
-
-  <div id="status-box" class="status-box status-info">Loading swap…</div>
-
-  <div id="main-content">
-
     <div class="card">
-      <div class="card-header"><span class="card-title">You Are Sending</span></div>
-      <div class="txn-list" id="txn-list"></div>
+        <div class="logo">🐦</div>
+        <h1>Opening Pera Wallet…</h1>
+        <p>You are being redirected to complete your Puffin Swap transaction.</p>
+        <a id="openBtn" class="btn" href="#">Open in Pera Wallet</a>
+        <p class="note">If Pera doesn't open automatically, tap the button above.<br>Make sure Pera Wallet is installed on your device.</p>
+        <p id="errorMsg" class="note error" style="display:none;">
+            No wallet link found. Please return to Discord and try again.
+        </p>
     </div>
 
-    <div class="addr-card">
-      <div class="addr-label">Signing address</div>
-      <div class="addr-value" id="addr-display">—</div>
-    </div>
+    <script>
+        const params  = new URLSearchParams(window.location.search);
+        const target  = params.get('to');
+        const btn     = document.getElementById('openBtn');
+        const errMsg  = document.getElementById('errorMsg');
 
-    <div class="card">
-      <div class="card-header"><span class="card-title">Sign Atomic Group</span></div>
-
-      <div class="step-indicator">
-        <div class="step active" id="step-connect">
-          <div class="step-num">1</div>
-          <span>Connect</span>
-        </div>
-        <div class="step-line"></div>
-        <div class="step pending" id="step-sign">
-          <div class="step-num">2</div>
-          <span>Sign</span>
-        </div>
-        <div class="step-line"></div>
-        <div class="step pending" id="step-submit">
-          <div class="step-num">3</div>
-          <span>Submit</span>
-        </div>
-      </div>
-
-      <div class="action-section">
-        <div id="connect-section">
-          <div class="wallet-row">
-            <button class="wallet-btn" id="btn-pera"  onclick="connectWallet('pera')">🔵 Pera</button>
-            <button class="wallet-btn" id="btn-defly" onclick="connectWallet('defly')">🟢 Defly</button>
-          </div>
-        </div>
-        <button class="sign-btn" id="sign-btn" disabled onclick="signAndSubmit()">
-          Connect a wallet first
-        </button>
-      </div>
-    </div>
-
-    <p class="help">
-      All 6 transactions (5 NFTs + 100 ALGO) are bundled as one<br>
-      atomic group. Your wallet will show them together — approve once.<br>
-      <br>
-      <span style="color:var(--warn)">⏱ Link expires 30 minutes after generation.</span>
-    </p>
-
-  </div>
-</div>
-
-<script>
-  // ── Resolve wallet constructors ───────────────────────────────────────────
-  function resolveConstructor(candidates) {
-    for (var i = 0; i < candidates.length; i++) {
-      var parts = candidates[i].split('.');
-      var obj = window;
-      for (var j = 0; j < parts.length; j++) {
-        if (obj == null) { obj = null; break; }
-        obj = obj[parts[j]];
-      }
-      if (typeof obj === 'function') return obj;
-    }
-    return null;
-  }
-
-  var PeraWalletConnect = resolveConstructor([
-    'peraWalletConnect.PeraWalletConnect',
-    'PeraWalletConnect',
-  ]);
-
-  var DeflyWalletConnect = resolveConstructor([
-    'deflyWalletConnect.DeflyWalletConnect',
-    'DeflyWalletConnect',
-  ]);
-
-  if (!PeraWalletConnect || !DeflyWalletConnect) {
-    var sb = document.getElementById('status-box');
-    sb.className     = 'status-box status-error';
-    sb.innerHTML     = '⚠️ Wallet scripts failed to load.<br>Please hard-refresh (Ctrl+Shift+R) and try again.<br><small>If this persists, contact an admin.</small>';
-    sb.style.display = 'block';
-    console.error('[PuffinSwap] Wallet constructor resolution failed. Globals:', {
-      peraWalletConnect:  window.peraWalletConnect,
-      PeraWalletConnect:  window.PeraWalletConnect,
-      deflyWalletConnect: window.deflyWalletConnect,
-      DeflyWalletConnect: window.DeflyWalletConnect,
-    });
-  }
-  // ─────────────────────────────────────────────────────────────────────────
-
-  // algosdk v1.24.1 — matches the WalletConnect v1 internal version used by
-  // pera 1.3.4 and defly 1.1.4. Transaction objects from this version have
-  // get_obj_for_encoding() which is what WalletConnect calls internally.
-  const ALGOD_URL = 'https://mainnet-api.algonode.cloud';
-
-  let encodedTxns  = [];
-  let userAddress  = '';
-  let activeWallet = null;
-  let walletType   = null;
-
-  const peraWallet  = PeraWalletConnect  ? new PeraWalletConnect()  : null;
-  const deflyWallet = DeflyWalletConnect ? new DeflyWalletConnect() : null;
-
-  function showStatus(type, msg) {
-    const el = document.getElementById('status-box');
-    el.className     = 'status-box status-' + type;
-    el.innerHTML     = msg;
-    el.style.display = 'block';
-  }
-
-  function setStep(stepId, state) {
-    document.getElementById(stepId).className = 'step ' + state;
-  }
-
-  async function loadSwap() {
-    const params = new URLSearchParams(window.location.search);
-    const gistId = params.get('gist');
-
-    if (!gistId) {
-      document.getElementById('status-box').style.display = 'none';
-      document.getElementById('main-content').innerHTML =
-        '<p style="text-align:center;padding:40px;color:var(--muted)">⚠️ Invalid swap link.<br>Please request a new one from Discord.</p>';
-      document.getElementById('main-content').style.display = 'block';
-      return;
-    }
-
-    try {
-      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
-        headers: { 'Accept': 'application/vnd.github+json' },
-      });
-      if (!res.ok) throw new Error('Swap not found or expired');
-
-      const gist    = await res.json();
-      const content = gist.files?.['swap.json']?.content;
-      if (!content) throw new Error('Swap data missing from link');
-
-      const data  = JSON.parse(content);
-      encodedTxns = data.txns;
-      userAddress = data.addr;
-
-      // Display transaction list — algosdk v1.x decode, graceful fallback
-      document.getElementById('txn-list').innerHTML = encodedTxns.map(function(b64, i) {
-        try {
-          const bytes  = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-          const txn    = algosdk.decodeUnsignedTransaction(bytes);
-          const isAlgo = txn.type === 'pay';
-          let label;
-          if (isAlgo) {
-            label = '100 ALGO payment';
-          } else if (txn.note && txn.note.length) {
-            label = new TextDecoder().decode(txn.note);
-          } else {
-            label = 'NFT transfer ' + (i + 1);
-          }
-          return '<div class="txn-row">' +
-            '<div class="dot' + (isAlgo ? ' algo' : '') + '"></div>' +
-            '<span>' + label + '</span>' +
-            '<small>TXN ' + (i + 1) + '</small>' +
-            '</div>';
-        } catch (e) {
-          return '<div class="txn-row">' +
-            '<div class="dot"></div>' +
-            '<span>Transaction ' + (i + 1) + '</span>' +
-            '<small>TXN ' + (i + 1) + '</small>' +
-            '</div>';
+        if (target) {
+            const decoded = decodeURIComponent(target);
+            btn.href = decoded;
+            // Auto-redirect immediately
+            window.location.href = decoded;
+        } else {
+            btn.style.display = 'none';
+            errMsg.style.display = 'block';
         }
-      }).join('');
-
-      document.getElementById('addr-display').textContent = userAddress;
-      document.getElementById('status-box').style.display = 'none';
-      document.getElementById('main-content').style.display = 'block';
-
-      if (peraWallet) {
-        peraWallet.reconnectSession()
-          .then(function(accounts) {
-            if (accounts.length && accounts[0].toLowerCase() === userAddress.toLowerCase()) {
-              walletType   = 'pera';
-              activeWallet = peraWallet;
-              document.getElementById('btn-pera').classList.add('active');
-              const signBtn = document.getElementById('sign-btn');
-              signBtn.disabled    = false;
-              signBtn.textContent = 'Sign ' + encodedTxns.length + ' transactions in Pera';
-              setStep('step-connect', 'done');
-              setStep('step-sign',    'active');
-            }
-          })
-          .catch(function() {});
-      }
-
-    } catch (err) {
-      showStatus('error', '⚠️ ' + err.message + '.<br><br>Please request a new swap link from Discord.');
-    }
-  }
-
-  async function connectWallet(type) {
-    if (!peraWallet || !deflyWallet) {
-      showStatus('error', '⚠️ Wallet scripts did not load correctly. Please hard-refresh and try again.');
-      return;
-    }
-
-    try {
-      if (activeWallet && walletType !== type) {
-        await activeWallet.disconnect().catch(function() {});
-      }
-
-      walletType   = type;
-      activeWallet = type === 'pera' ? peraWallet : deflyWallet;
-
-      const accounts  = await activeWallet.connect();
-      const connected = accounts[0];
-
-      if (connected.toLowerCase() !== userAddress.toLowerCase()) {
-        showStatus('warn',
-          '⚠️ Wrong address connected.<br>' +
-          'Expected: <code style="font-size:10px">' + userAddress + '</code><br>' +
-          'Got: <code style="font-size:10px">' + connected + '</code><br>' +
-          'Please connect the correct wallet.'
-        );
-        await activeWallet.disconnect().catch(function() {});
-        return;
-      }
-
-      document.getElementById('status-box').style.display = 'none';
-      document.getElementById('btn-' + type).classList.add('active');
-      document.getElementById(type === 'pera' ? 'btn-defly' : 'btn-pera').classList.remove('active');
-
-      const signBtn = document.getElementById('sign-btn');
-      signBtn.disabled    = false;
-      signBtn.textContent = 'Sign ' + encodedTxns.length + ' transactions in ' + (type === 'pera' ? 'Pera' : 'Defly');
-
-      setStep('step-connect', 'done');
-      setStep('step-sign',    'active');
-
-    } catch (err) {
-      if (err.message && !err.message.includes('cancelled') && !err.message.includes('closed')) {
-        showStatus('error', 'Connection failed: ' + err.message);
-      }
-    }
-  }
-
-  async function signAndSubmit() {
-    if (!activeWallet) return;
-
-    const signBtn = document.getElementById('sign-btn');
-    signBtn.disabled    = true;
-    signBtn.textContent = '⏳ Waiting for wallet approval…';
-    document.getElementById('status-box').style.display = 'none';
-
-    try {
-      // Decode using the SAME algosdk v1.24.1 that's bundled with pera/defly.
-      // These Transaction objects have get_obj_for_encoding() which is what
-      // WalletConnect v1 calls internally when building the signing payload.
-      const txnGroup = encodedTxns.map(function(b64) {
-        const bytes = Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); });
-        return {
-          txn:     algosdk.decodeUnsignedTransaction(bytes),
-          signers: [userAddress],
-        };
-      });
-
-      setStep('step-sign', 'active');
-
-      const signedTxns = await activeWallet.signTransaction([txnGroup]);
-
-      setStep('step-sign',   'done');
-      setStep('step-submit', 'active');
-      signBtn.textContent = '⏳ Submitting to Algorand…';
-
-      const algodClient = new algosdk.Algodv2('', ALGOD_URL, 443);
-      const { txId }    = await algodClient.sendRawTransaction(signedTxns).do();
-      await algosdk.waitForConfirmation(algodClient, txId, 6);
-
-      setStep('step-submit', 'done');
-      signBtn.classList.add('success');
-      signBtn.textContent = '✅ Submitted — Return to Discord';
-      signBtn.disabled    = false;
-      signBtn.onclick     = null;
-
-      showStatus('success',
-        '✅ All transactions confirmed on-chain!<br>' +
-        '<a href="https://allo.info/tx/' + txId + '" target="_blank" style="color:var(--success)">' +
-        'View on Allo Explorer →</a><br><br>' +
-        'Go back to Discord and tap <strong>"✅ I\'ve signed and submitted all transactions"</strong>.'
-      );
-
-    } catch (err) {
-      setStep('step-sign', 'active');
-      signBtn.disabled    = false;
-      signBtn.textContent = 'Try Again';
-      const msg = err.message || 'Unknown error';
-      showStatus('error', '⚠️ ' + (msg.includes('cancelled') ? 'Signing was cancelled.' : msg));
-    }
-  }
-
-  loadSwap();
-</script>
+    </script>
 </body>
 </html>
