@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Raffle Ticket Payment</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>var global = window;</script>
+  <script src="vendor/vendor-bundle.js"></script>
+
+  <style>
+    :root {
+      --bg:      #080b14; --surface: #0e1220; --border:  #1e2640;
+      --border2: #2a3560; --text:    #c8d0e8; --muted:   #5a6480;
+      --accent:  #4f8ef7; --success: #22c97a; --warn:    #f5a623;
+      --mono:    'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: var(--sans); background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: flex-start;
+      justify-content: center; padding: 24px 16px 48px;
+    }
+    body::before {
+      content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background-image:
+        linear-gradient(rgba(79,142,247,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(79,142,247,.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    .wrap { position:relative; z-index:1; width:100%; max-width:440px; }
+    .header { text-align:center; padding:32px 0 24px; }
+    .logo-ring {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:64px; height:64px; border-radius:50%;
+      border:1.5px solid var(--border2); background:var(--surface);
+      font-size:32px; margin-bottom:14px;
+      box-shadow:0 0 32px rgba(79,142,247,.12);
+    }
+    .header h1 { font-family:var(--mono); font-size:18px; font-weight:700; color:#fff; }
+    .header p  { font-size:13px; color:var(--muted); margin-top:4px; }
+
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:16px; overflow:hidden; margin-bottom:12px; }
+    .card-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border); }
+    .card-title  { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+    .card-body   { padding:16px 18px; }
+
+    .detail-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .detail-row:last-child { border-bottom:none; }
+    .detail-row .label { color:var(--muted); }
+    .detail-row .value { color:#fff; font-weight:600; font-family:var(--mono); font-size:12px; }
+
+    .addr-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:12px; }
+    .addr-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:5px; }
+    .addr-value { font-family:var(--mono); font-size:11px; color:#8899cc; word-break:break-all; line-height:1.5; }
+
+    .txid-box { background:rgba(34,201,122,.06); border:1px solid rgba(34,201,122,.3); border-radius:10px; padding:14px 16px; margin-bottom:12px; }
+    .txid-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.8px; color:var(--success); margin-bottom:6px; }
+    .txid-value { font-family:var(--mono); font-size:11px; color:#8899cc; word-break:break-all; line-height:1.5; }
+    .copy-btn {
+      margin-top:8px; padding:7px 14px; border-radius:8px; border:1px solid var(--border2);
+      background:var(--bg); color:var(--text); font-family:var(--sans); font-size:12px;
+      font-weight:500; cursor:pointer; transition:all .15s;
+    }
+    .copy-btn:hover { border-color:var(--success); color:var(--success); }
+
+    .action-section { padding:4px 18px 18px; display:flex; flex-direction:column; gap:8px; }
+    .sign-btn {
+      width:100%; padding:16px; border-radius:12px; border:none;
+      font-family:var(--sans); font-size:15px; font-weight:600;
+      background:var(--accent); color:#fff; cursor:pointer;
+      box-shadow:0 4px 20px rgba(79,142,247,.3); transition:all .2s ease;
+    }
+    .sign-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 28px rgba(79,142,247,.4); }
+    .sign-btn:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; box-shadow:none; }
+    .sign-btn.success { background:var(--success); box-shadow:0 4px 20px rgba(34,201,122,.3); }
+
+    .wallet-row { display:flex; gap:8px; }
+    .wallet-btn {
+      flex:1; padding:11px; border-radius:10px; border:1px solid var(--border2);
+      background:var(--bg); color:var(--text); font-family:var(--sans);
+      font-size:13px; font-weight:500; cursor:pointer; transition:all .15s;
+    }
+    .wallet-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .wallet-btn.active { border-color:var(--success); color:var(--success); background:rgba(34,201,122,.06); }
+
+    .status-box { padding:14px 18px; border-radius:12px; border:1px solid; font-size:13px; margin-bottom:12px; line-height:1.6; }
+    .status-info    { background:rgba(79,142,247,.08); border-color:rgba(79,142,247,.3); color:#7fb3ff; }
+    .status-success { background:rgba(34,201,122,.08); border-color:rgba(34,201,122,.3); color:var(--success); }
+    .status-error   { background:rgba(255,80,80,.08);  border-color:rgba(255,80,80,.3);  color:#ff8080; }
+    .status-warn    { background:rgba(245,166,35,.08); border-color:rgba(245,166,35,.3); color:var(--warn); }
+
+    .step-indicator { display:flex; align-items:center; gap:8px; padding:16px 18px 14px; font-size:12px; color:var(--muted); font-family:var(--mono); }
+    .step { display:flex; align-items:center; gap:4px; }
+    .step-num { width:20px; height:20px; border-radius:50%; border:1px solid; display:flex; align-items:center; justify-content:center; font-size:10px; }
+    .step.done .step-num   { border-color:var(--success); color:var(--success); }
+    .step.active .step-num { border-color:var(--accent);  color:var(--accent);  }
+    .step.pending .step-num { border-color:var(--muted); }
+    .step-line { flex:1; height:1px; background:var(--border); }
+
+    .help { text-align:center; font-size:12px; color:var(--muted); padding:8px 0 4px; line-height:1.7; }
+    #main-content { display:none; }
+    #txid-section  { display:none; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <div class="logo-ring">🎟️</div>
+    <h1>Raffle Tickets</h1>
+    <p>Connect your wallet to complete your purchase</p>
+  </div>
+
+  <div id="status-box" class="status-box status-info">Loading payment details…</div>
+
+  <div id="main-content">
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Payment Summary</span></div>
+      <div class="card-body">
+        <div class="detail-row">
+          <span class="label">Raffle</span>
+          <span class="value" id="detail-raffle">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Tickets</span>
+          <span class="value" id="detail-tickets">—</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Total</span>
+          <span class="value" id="detail-amount">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="addr-card">
+      <div class="addr-label">Paying from</div>
+      <div class="addr-value" id="addr-display">—</div>
+    </div>
+
+    <!-- Transaction ID shown after success -->
+    <div id="txid-section" class="txid-box">
+      <div class="txid-label">✅ Transaction ID — Copy this!</div>
+      <div class="txid-value" id="txid-value">—</div>
+      <button class="copy-btn" onclick="copyTxId()">📋 Copy Transaction ID</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Pay with Wallet</span></div>
+
+      <div class="step-indicator">
+        <div class="step active" id="step-connect">
+          <div class="step-num">1</div>
+          <span>Connect</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step pending" id="step-sign">
+          <div class="step-num">2</div>
+          <span>Pay</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="step pending" id="step-done">
+          <div class="step-num">3</div>
+          <span>Done</span>
+        </div>
+      </div>
+
+      <div class="action-section">
+        <div class="wallet-row">
+          <button class="wallet-btn" id="btn-pera"  onclick="connectWallet('pera')">🔵 Pera</button>
+          <button class="wallet-btn" id="btn-defly" onclick="connectWallet('defly')">🟢 Defly</button>
+        </div>
+        <button class="sign-btn" id="sign-btn" disabled onclick="sendPayment()">
+          Connect a wallet first
+        </button>
+      </div>
+    </div>
+
+    <p class="help">
+      After paying, copy your Transaction ID above<br>
+      then return to Discord and tap <strong>✅ I've Paid</strong>.<br>
+      <br>
+      <span style="color:var(--warn)">⏱ Link expires 30 minutes after generation.</span>
+    </p>
+
+  </div>
+</div>
+
+<script>
+  // ── Resolve wallet constructors ───────────────────────────────────────────
+  function resolveConstructor(candidates) {
+    for (var i = 0; i < candidates.length; i++) {
+      var parts = candidates[i].split('.');
+      var obj = window;
+      for (var j = 0; j < parts.length; j++) {
+        if (obj == null) { obj = null; break; }
+        obj = obj[parts[j]];
+      }
+      if (typeof obj === 'function') return obj;
+    }
+    return null;
+  }
+
+  var PeraWalletConnect = resolveConstructor([
+    'peraWalletConnect.PeraWalletConnect',
+    'PeraWalletConnect',
+  ]);
+
+  var DeflyWalletConnect = resolveConstructor([
+    'deflyWalletConnect.DeflyWalletConnect',
+    'DeflyWalletConnect',
+  ]);
+
+  if (!PeraWalletConnect || !DeflyWalletConnect) {
+    var sb = document.getElementById('status-box');
+    sb.className     = 'status-box status-error';
+    sb.innerHTML     = '⚠️ Wallet scripts failed to load.<br>Please hard-refresh (Ctrl+Shift+R) and try again.';
+    sb.style.display = 'block';
+    console.error('[Raffle] Wallet constructor resolution failed.', {
+      peraWalletConnect:  window.peraWalletConnect,
+      deflyWalletConnect: window.deflyWalletConnect,
+    });
+  }
+  // ─────────────────────────────────────────────────────────────────────────
+
+  const ALGOD_URL = 'https://mainnet-api.algonode.cloud';
+
+  let paymentData  = null;
+  let userAddress  = '';
+  let activeWallet = null;
+  let walletType   = null;
+  let lastTxId     = null;
+
+  const peraWallet  = PeraWalletConnect  ? new PeraWalletConnect()  : null;
+  const deflyWallet = DeflyWalletConnect ? new DeflyWalletConnect() : null;
+
+  function showStatus(type, msg) {
+    const el = document.getElementById('status-box');
+    el.className     = 'status-box status-' + type;
+    el.innerHTML     = msg;
+    el.style.display = 'block';
+  }
+
+  function setStep(stepId, state) {
+    document.getElementById(stepId).className = 'step ' + state;
+  }
+
+  function copyTxId() {
+    if (!lastTxId) return;
+    navigator.clipboard.writeText(lastTxId).then(function() {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(function() { btn.textContent = '📋 Copy Transaction ID'; }, 2000);
+    }).catch(function() {
+      // Fallback for older browsers
+      const el = document.createElement('textarea');
+      el.value = lastTxId;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(function() { btn.textContent = '📋 Copy Transaction ID'; }, 2000);
+    });
+  }
+
+  async function loadPayment() {
+    const params = new URLSearchParams(window.location.search);
+    const gistId = params.get('gist');
+
+    if (!gistId) {
+      document.getElementById('status-box').style.display = 'none';
+      document.getElementById('main-content').innerHTML =
+        '<p style="text-align:center;padding:40px;color:var(--muted)">⚠️ Invalid payment link.<br>Please request a new one from Discord.</p>';
+      document.getElementById('main-content').style.display = 'block';
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: { 'Accept': 'application/vnd.github+json' },
+      });
+      if (!res.ok) throw new Error('Payment link not found or expired');
+
+      const gist    = await res.json();
+      const content = gist.files?.['raffle-payment.json']?.content;
+      if (!content) throw new Error('Payment data missing from link');
+
+      paymentData = JSON.parse(content);
+      userAddress = paymentData.userAddress;
+
+      document.getElementById('detail-raffle').textContent  = paymentData.raffleId;
+      document.getElementById('detail-tickets').textContent = paymentData.tickets + ' ticket(s)';
+      document.getElementById('detail-amount').textContent  = paymentData.displayAmount;
+      document.getElementById('addr-display').textContent   = userAddress;
+
+      document.getElementById('status-box').style.display  = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      if (peraWallet) {
+        peraWallet.reconnectSession()
+          .then(function(accounts) {
+            if (accounts.length && accounts[0].toLowerCase() === userAddress.toLowerCase()) {
+              walletType   = 'pera';
+              activeWallet = peraWallet;
+              document.getElementById('btn-pera').classList.add('active');
+              const signBtn = document.getElementById('sign-btn');
+              signBtn.disabled    = false;
+              signBtn.textContent = 'Pay ' + paymentData.displayAmount + ' in Pera';
+              setStep('step-connect', 'done');
+              setStep('step-sign',    'active');
+            }
+          })
+          .catch(function() {});
+      }
+
+    } catch (err) {
+      showStatus('error', '⚠️ ' + err.message + '.<br><br>Please request a new link from Discord.');
+    }
+  }
+
+  async function connectWallet(type) {
+    if (!peraWallet || !deflyWallet) {
+      showStatus('error', '⚠️ Wallet scripts did not load. Please hard-refresh and try again.');
+      return;
+    }
+
+    try {
+      if (activeWallet && walletType !== type) {
+        await activeWallet.disconnect().catch(function() {});
+      }
+
+      walletType   = type;
+      activeWallet = type === 'pera' ? peraWallet : deflyWallet;
+
+      const accounts  = await activeWallet.connect();
+      const connected = accounts[0];
+
+      if (connected.toLowerCase() !== userAddress.toLowerCase()) {
+        showStatus('warn',
+          '⚠️ Wrong address connected.<br>' +
+          'Expected: <code style="font-size:10px">' + userAddress + '</code><br>' +
+          'Got: <code style="font-size:10px">' + connected + '</code><br>' +
+          'Please connect the correct wallet.'
+        );
+        await activeWallet.disconnect().catch(function() {});
+        return;
+      }
+
+      document.getElementById('status-box').style.display = 'none';
+      document.getElementById('btn-' + type).classList.add('active');
+      document.getElementById(type === 'pera' ? 'btn-defly' : 'btn-pera').classList.remove('active');
+
+      const signBtn = document.getElementById('sign-btn');
+      signBtn.disabled    = false;
+      signBtn.textContent = 'Pay ' + paymentData.displayAmount + ' in ' + (type === 'pera' ? 'Pera' : 'Defly');
+
+      setStep('step-connect', 'done');
+      setStep('step-sign',    'active');
+
+    } catch (err) {
+      if (err.message && !err.message.includes('cancelled') && !err.message.includes('closed')) {
+        showStatus('error', 'Connection failed: ' + err.message);
+      }
+    }
+  }
+
+  async function sendPayment() {
+    if (!activeWallet || !paymentData) return;
+
+    const signBtn = document.getElementById('sign-btn');
+    signBtn.disabled    = true;
+    signBtn.textContent = '⏳ Waiting for wallet approval…';
+    document.getElementById('status-box').style.display = 'none';
+
+    try {
+      const algodClient     = new algosdk.Algodv2('', ALGOD_URL, 443);
+      const suggestedParams = await algodClient.getTransactionParams().do();
+      const noteBytes       = new Uint8Array(Buffer.from(paymentData.note, 'utf8'));
+      const amountRaw       = parseInt(paymentData.amountRaw);
+
+      let txn;
+
+      if (paymentData.txnType === 'pay') {
+        // ALGO payment
+        txn = algosdk.makePaymentTxnWithSuggestedParams(
+          userAddress,
+          paymentData.receiverAddress,
+          amountRaw,
+          undefined,
+          noteBytes,
+          suggestedParams
+        );
+      } else {
+        // ASA transfer
+        txn = algosdk.makeAssetTransferTxnWithSuggestedParams(
+          userAddress,
+          paymentData.receiverAddress,
+          undefined,
+          undefined,
+          amountRaw,
+          noteBytes,
+          paymentData.assetId,
+          suggestedParams
+        );
+      }
+
+      const txnGroup   = [{ txn: txn, signers: [userAddress] }];
+      setStep('step-sign', 'active');
+
+      const signedTxns = await activeWallet.signTransaction([txnGroup]);
+
+      signBtn.textContent = '⏳ Submitting…';
+
+      const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
+      await algosdk.waitForConfirmation(algodClient, txId, 6);
+
+      lastTxId = txId;
+
+      setStep('step-sign', 'done');
+      setStep('step-done', 'done');
+
+      // Show the txId prominently for the user to copy
+      document.getElementById('txid-value').textContent  = txId;
+      document.getElementById('txid-section').style.display = 'block';
+
+      signBtn.classList.add('success');
+      signBtn.textContent = '✅ Payment Sent — Return to Discord';
+      signBtn.disabled    = false;
+      signBtn.onclick     = null;
+
+      showStatus('success',
+        '✅ Payment confirmed on-chain!<br><br>' +
+        'Copy your Transaction ID above, then return to Discord and tap <strong>✅ I\'ve Paid</strong> and paste it in.'
+      );
+
+    } catch (err) {
+      setStep('step-sign', 'active');
+      signBtn.disabled    = false;
+      signBtn.textContent = 'Try Again';
+      const msg = err.message || 'Unknown error';
+      showStatus('error', '⚠️ ' + (msg.includes('cancelled') ? 'Payment was cancelled.' : msg));
+    }
+  }
+
+  loadPayment();
+</script>
+</body>
+</html>
