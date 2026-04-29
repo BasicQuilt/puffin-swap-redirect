@@ -55,16 +55,6 @@
     .addr-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:5px; }
     .addr-value { font-family:var(--mono); font-size:11px; color:#8899cc; word-break:break-all; line-height:1.5; }
 
-    .txid-box { background:rgba(34,201,122,.06); border:1px solid rgba(34,201,122,.3); border-radius:10px; padding:14px 16px; margin-bottom:12px; }
-    .txid-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.8px; color:var(--success); margin-bottom:6px; }
-    .txid-value { font-family:var(--mono); font-size:11px; color:#8899cc; word-break:break-all; line-height:1.5; }
-    .copy-btn {
-      margin-top:8px; padding:7px 14px; border-radius:8px; border:1px solid var(--border2);
-      background:var(--bg); color:var(--text); font-family:var(--sans); font-size:12px;
-      font-weight:500; cursor:pointer; transition:all .15s;
-    }
-    .copy-btn:hover { border-color:var(--success); color:var(--success); }
-
     .action-section { padding:4px 18px 18px; display:flex; flex-direction:column; gap:8px; }
     .sign-btn {
       width:100%; padding:16px; border-radius:12px; border:none;
@@ -101,7 +91,6 @@
 
     .help { text-align:center; font-size:12px; color:var(--muted); padding:8px 0 4px; line-height:1.7; }
     #main-content { display:none; }
-    #txid-section  { display:none; }
   </style>
 </head>
 <body>
@@ -132,19 +121,16 @@
           <span class="label">Total</span>
           <span class="value" id="detail-amount">—</span>
         </div>
+        <div class="detail-row">
+          <span class="label">Payment type</span>
+          <span class="value" id="detail-type">—</span>
+        </div>
       </div>
     </div>
 
     <div class="addr-card">
       <div class="addr-label">Paying from</div>
       <div class="addr-value" id="addr-display">—</div>
-    </div>
-
-    <!-- Transaction ID shown after success -->
-    <div id="txid-section" class="txid-box">
-      <div class="txid-label">✅ Transaction ID — Copy this!</div>
-      <div class="txid-value" id="txid-value">—</div>
-      <button class="copy-btn" onclick="copyTxId()">📋 Copy Transaction ID</button>
     </div>
 
     <div class="card">
@@ -179,8 +165,8 @@
     </div>
 
     <p class="help">
-      After paying, copy your Transaction ID above<br>
-      then return to Discord and tap <strong>✅ I've Paid</strong>.<br>
+      After the transaction confirms, return to Discord<br>
+      and tap <strong>✅ I've Paid</strong> — the bot verifies automatically.<br>
       <br>
       <span style="color:var(--warn)">⏱ Link expires 30 minutes after generation.</span>
     </p>
@@ -231,7 +217,6 @@
   let userAddress  = '';
   let activeWallet = null;
   let walletType   = null;
-  let lastTxId     = null;
 
   const peraWallet  = PeraWalletConnect  ? new PeraWalletConnect()  : null;
   const deflyWallet = DeflyWalletConnect ? new DeflyWalletConnect() : null;
@@ -247,24 +232,9 @@
     document.getElementById(stepId).className = 'step ' + state;
   }
 
-  function copyTxId() {
-    if (!lastTxId) return;
-    navigator.clipboard.writeText(lastTxId).then(function() {
-      const btn = document.querySelector('.copy-btn');
-      btn.textContent = '✅ Copied!';
-      setTimeout(function() { btn.textContent = '📋 Copy Transaction ID'; }, 2000);
-    }).catch(function() {
-      // Fallback for older browsers
-      const el = document.createElement('textarea');
-      el.value = lastTxId;
-      document.body.appendChild(el);
-      el.select();
-      document.execCommand('copy');
-      document.body.removeChild(el);
-      const btn = document.querySelector('.copy-btn');
-      btn.textContent = '✅ Copied!';
-      setTimeout(function() { btn.textContent = '📋 Copy Transaction ID'; }, 2000);
-    });
+  // Encode note string to Uint8Array without relying on Buffer
+  function encodeNote(str) {
+    return new TextEncoder().encode(str);
   }
 
   async function loadPayment() {
@@ -295,9 +265,10 @@
       document.getElementById('detail-raffle').textContent  = paymentData.raffleId;
       document.getElementById('detail-tickets').textContent = paymentData.tickets + ' ticket(s)';
       document.getElementById('detail-amount').textContent  = paymentData.displayAmount;
+      document.getElementById('detail-type').textContent    = paymentData.txnType === 'pay' ? 'ALGO payment' : 'ASA transfer (Asset ID: ' + paymentData.assetId + ')';
       document.getElementById('addr-display').textContent   = userAddress;
 
-      document.getElementById('status-box').style.display  = 'none';
+      document.getElementById('status-box').style.display   = 'none';
       document.getElementById('main-content').style.display = 'block';
 
       if (peraWallet) {
@@ -307,9 +278,9 @@
               walletType   = 'pera';
               activeWallet = peraWallet;
               document.getElementById('btn-pera').classList.add('active');
-              const signBtn = document.getElementById('sign-btn');
-              signBtn.disabled    = false;
-              signBtn.textContent = 'Pay ' + paymentData.displayAmount + ' in Pera';
+              const signBtn        = document.getElementById('sign-btn');
+              signBtn.disabled     = false;
+              signBtn.textContent  = 'Pay ' + paymentData.displayAmount + ' in Pera';
               setStep('step-connect', 'done');
               setStep('step-sign',    'active');
             }
@@ -354,7 +325,7 @@
       document.getElementById('btn-' + type).classList.add('active');
       document.getElementById(type === 'pera' ? 'btn-defly' : 'btn-pera').classList.remove('active');
 
-      const signBtn = document.getElementById('sign-btn');
+      const signBtn       = document.getElementById('sign-btn');
       signBtn.disabled    = false;
       signBtn.textContent = 'Pay ' + paymentData.displayAmount + ' in ' + (type === 'pera' ? 'Pera' : 'Defly');
 
@@ -371,7 +342,7 @@
   async function sendPayment() {
     if (!activeWallet || !paymentData) return;
 
-    const signBtn = document.getElementById('sign-btn');
+    const signBtn       = document.getElementById('sign-btn');
     signBtn.disabled    = true;
     signBtn.textContent = '⏳ Waiting for wallet approval…';
     document.getElementById('status-box').style.display = 'none';
@@ -379,32 +350,40 @@
     try {
       const algodClient     = new algosdk.Algodv2('', ALGOD_URL, 443);
       const suggestedParams = await algodClient.getTransactionParams().do();
-      const noteBytes       = new Uint8Array(Buffer.from(paymentData.note, 'utf8'));
-      const amountRaw       = parseInt(paymentData.amountRaw);
+
+      // Encode the note using TextEncoder — no Buffer dependency
+      const noteBytes = encodeNote(paymentData.note);
+
+      // amountRaw is a string from JSON (BigInt-safe) — parse to number for algosdk v1.x
+      const amountRaw = parseInt(paymentData.amountRaw, 10);
 
       let txn;
 
       if (paymentData.txnType === 'pay') {
-        // ALGO payment
+        // ── ALGO payment ──────────────────────────────────────────────────────
+        // makePaymentTxnWithSuggestedParams sends ALGO microalgos
+        // amountRaw is already in microalgos (set by the bot)
         txn = algosdk.makePaymentTxnWithSuggestedParams(
-          userAddress,
-          paymentData.receiverAddress,
-          amountRaw,
-          undefined,
-          noteBytes,
-          suggestedParams
+          userAddress,              // from
+          paymentData.receiverAddress, // to
+          amountRaw,                // amount in microalgos
+          undefined,                // closeRemainderTo
+          noteBytes,                // note
+          suggestedParams           // suggested params
         );
       } else {
-        // ASA transfer
+        // ── ASA transfer ──────────────────────────────────────────────────────
+        // makeAssetTransferTxnWithSuggestedParams sends an ASA token
+        // amountRaw is in the asset's base units (set by the bot)
         txn = algosdk.makeAssetTransferTxnWithSuggestedParams(
-          userAddress,
-          paymentData.receiverAddress,
-          undefined,
-          undefined,
-          amountRaw,
-          noteBytes,
-          paymentData.assetId,
-          suggestedParams
+          userAddress,              // from
+          paymentData.receiverAddress, // to
+          undefined,                // closeRemainderTo
+          undefined,                // revocationTarget
+          amountRaw,                // amount in asset base units
+          noteBytes,                // note
+          paymentData.assetId,      // asset index
+          suggestedParams           // suggested params
         );
       }
 
@@ -418,14 +397,8 @@
       const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
       await algosdk.waitForConfirmation(algodClient, txId, 6);
 
-      lastTxId = txId;
-
       setStep('step-sign', 'done');
       setStep('step-done', 'done');
-
-      // Show the txId prominently for the user to copy
-      document.getElementById('txid-value').textContent  = txId;
-      document.getElementById('txid-section').style.display = 'block';
 
       signBtn.classList.add('success');
       signBtn.textContent = '✅ Payment Sent — Return to Discord';
@@ -434,7 +407,7 @@
 
       showStatus('success',
         '✅ Payment confirmed on-chain!<br><br>' +
-        'Copy your Transaction ID above, then return to Discord and tap <strong>✅ I\'ve Paid</strong> and paste it in.'
+        'Return to Discord and tap <strong>✅ I\'ve Paid</strong> — the bot will verify automatically.'
       );
 
     } catch (err) {
