@@ -275,25 +275,24 @@
 
 async function fetchNftImage(asaId) {
     try {
-        // 1. Get ASA params from indexer
         const res  = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
         if (!res.ok) return null;
         const data = await res.json();
         const url  = (data.asset?.params?.url || '').trim();
         if (!url) return null;
 
-        // 2. Strip #arc3 fragment and convert to gateway URL
-        const cleanUrl = url.replace(/#arc3$/, '');
-        const metaUrl  = cleanUrl.startsWith('ipfs://')
+        // Strip fragment entirely (#arc3, #arc3?optimizer=..., etc.)
+        const cleanUrl = url.split('#')[0];
+
+        // Convert ipfs:// to gateway, otherwise use as-is (already https)
+        const metaUrl = cleanUrl.startsWith('ipfs://')
             ? IPFS_GW + cleanUrl.slice(7)
             : cleanUrl;
 
-        // 3. Fetch the metadata JSON
         const metaRes = await fetch(metaUrl);
         if (!metaRes.ok) return null;
         const meta = await metaRes.json();
 
-        // 4. Pull the image field and convert to gateway URL
         const imageRaw = meta.image || meta.image_url || '';
         if (!imageRaw) return null;
 
