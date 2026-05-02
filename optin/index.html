@@ -46,9 +46,47 @@
     .card-title  { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
     .card-body   { padding:16px 18px; }
 
-    .nft-name { font-size:16px; font-weight:600; color:#fff; margin-bottom:4px; }
-    .nft-asa  { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    /* ── NFT display ────────────────────────────────────────────────────────── */
+    .nft-item {
+      display:flex; align-items:center; gap:14px;
+      padding:10px 0; border-bottom:1px solid var(--border);
+    }
+    .nft-item:last-child { border-bottom:none; padding-bottom:0; }
+    .nft-item:first-child { padding-top:0; }
 
+    .nft-img-wrap {
+      width:64px; height:64px; border-radius:10px; flex-shrink:0;
+      background:var(--border); overflow:hidden;
+      border:1px solid var(--border2);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .nft-img-wrap img {
+      width:100%; height:100%; object-fit:cover; display:block;
+    }
+    .nft-img-placeholder {
+      font-size:26px; line-height:1;
+    }
+
+    /* Single large image when only one puffin */
+    .nft-hero {
+      width:100%; aspect-ratio:1/1; max-height:280px; border-radius:12px;
+      overflow:hidden; background:var(--border);
+      border:1px solid var(--border2); margin-bottom:14px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .nft-hero img { width:100%; height:100%; object-fit:cover; display:block; }
+    .nft-hero-placeholder { font-size:72px; }
+
+    .nft-info { flex:1; min-width:0; }
+    .nft-name { font-size:15px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .nft-asa  { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:2px; }
+
+    /* Single puffin card body */
+    .single-nft-body { padding:16px 18px; }
+    .single-nft-name { font-size:18px; font-weight:700; color:#fff; margin-bottom:4px; }
+    .single-nft-asa  { font-family:var(--mono); font-size:11px; color:var(--muted); }
+
+    /* ── Rest of UI ──────────────────────────────────────────────────────────── */
     .addr-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:12px; }
     .addr-label { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.8px; color:var(--muted); margin-bottom:5px; }
     .addr-value { font-family:var(--mono); font-size:11px; color:#8899cc; word-break:break-all; line-height:1.5; }
@@ -89,6 +127,17 @@
 
     .help { text-align:center; font-size:12px; color:var(--muted); padding:8px 0 4px; line-height:1.7; }
     #main-content { display:none; }
+
+    /* Loading shimmer for images */
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+    .img-loading {
+      background: linear-gradient(90deg, var(--border) 25%, var(--border2) 50%, var(--border) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
   </style>
 </head>
 <body>
@@ -104,12 +153,10 @@
 
   <div id="main-content">
 
-    <div class="card">
-      <div class="card-header"><span class="card-title">You Are Receiving</span></div>
-      <div class="card-body">
-        <div class="nft-name" id="nft-name">—</div>
-        <div class="nft-asa" id="nft-asa">ASA —</div>
-      </div>
+    <!-- Populated by JS depending on single vs multi asset -->
+    <div id="nft-card" class="card">
+      <div class="card-header"><span class="card-title" id="card-title">You Are Receiving</span></div>
+      <div id="nft-card-body"></div>
     </div>
 
     <div class="addr-card">
@@ -148,7 +195,7 @@
       </div>
     </div>
 
-    <p class="help">
+    <p class="help" id="help-text">
       This is a zero-amount opt-in transaction.<br>
       It allows our bot to send your Tufted Puffin to you.<br>
       <br>
@@ -175,13 +222,10 @@
   }
 
   var PeraWalletConnect = resolveConstructor([
-    'peraWalletConnect.PeraWalletConnect',
-    'PeraWalletConnect',
+    'peraWalletConnect.PeraWalletConnect', 'PeraWalletConnect',
   ]);
-
   var DeflyWalletConnect = resolveConstructor([
-    'deflyWalletConnect.DeflyWalletConnect',
-    'DeflyWalletConnect',
+    'deflyWalletConnect.DeflyWalletConnect', 'DeflyWalletConnect',
   ]);
 
   if (!PeraWalletConnect || !DeflyWalletConnect) {
@@ -189,16 +233,14 @@
     sb.className     = 'status-box status-error';
     sb.innerHTML     = '⚠️ Wallet scripts failed to load.<br>Please hard-refresh (Ctrl+Shift+R) and try again.';
     sb.style.display = 'block';
-    console.error('[PuffinSwap] Wallet constructor resolution failed.', {
-      peraWalletConnect:  window.peraWalletConnect,
-      deflyWalletConnect: window.deflyWalletConnect,
-    });
   }
-  // ─────────────────────────────────────────────────────────────────────────
 
-  const ALGOD_URL = 'https://mainnet-api.algonode.cloud';
+  const ALGOD_URL   = 'https://mainnet-api.algonode.cloud';
+  const INDEXER_URL = 'https://mainnet-idx.algonode.cloud';
+  const IPFS_GW     = 'https://ipfs.algonode.xyz/ipfs/';
 
-  let asaId        = null;
+  // Normalised list of assets to opt into — always an array internally
+  let assets       = []; // [{ asaId: Number, asaName: String }]
   let userAddress  = '';
   let activeWallet = null;
   let walletType   = null;
@@ -217,6 +259,137 @@
     document.getElementById(stepId).className = 'step ' + state;
   }
 
+  // ── Image resolution ──────────────────────────────────────────────────────
+  // Tries to get a usable image URL from an ASA via indexer + metadata fetch.
+  // Returns null if nothing is found — the UI falls back to the 🐦 emoji.
+
+  function toGatewayUrl(url) {
+    if (!url) return null;
+    url = url.trim().replace(/#arc\d+$/, '').replace(/\?.*$/, '');
+    if (url.startsWith('ipfs://')) return IPFS_GW + url.slice(7);
+    if (url.startsWith('https://') || url.startsWith('http://')) return url;
+    // bare CID
+    if (/^Qm[1-9A-Za-z]{44}/.test(url) || /^bafyb/i.test(url)) return IPFS_GW + url;
+    return null;
+  }
+
+  async function fetchNftImage(asaId) {
+    try {
+      const res  = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
+      if (!res.ok) return null;
+      const data = await res.json();
+      const rawUrl = data.asset?.params?.url || '';
+
+      const gatewayUrl = toGatewayUrl(rawUrl);
+      if (!gatewayUrl) return null;
+
+      // If it looks like a metadata JSON endpoint, fetch and pull image field
+      const looksLikeJson =
+        gatewayUrl.endsWith('.json') ||
+        gatewayUrl.includes('/metadata') ||
+        rawUrl.includes('#arc3') ||
+        // IPFS URLs without an extension are usually metadata for ARC3
+        (rawUrl.startsWith('ipfs://') && !rawUrl.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i));
+
+      if (looksLikeJson) {
+        try {
+          const metaRes = await fetch(gatewayUrl);
+          if (metaRes.ok) {
+            const meta = await metaRes.json();
+            const imgRaw = meta.image || meta.image_url || meta.animation_url || '';
+            const imgUrl = toGatewayUrl(imgRaw);
+            if (imgUrl) return imgUrl;
+          }
+        } catch (_) { /* fall through to URL itself */ }
+      }
+
+      // If the URL itself looks like a direct image, use it
+      if (gatewayUrl.match(/\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i)) return gatewayUrl;
+
+      // Last resort — return the gateway URL and let the <img> decide
+      return gatewayUrl;
+
+    } catch (_) { return null; }
+  }
+
+  // ── NFT card rendering ────────────────────────────────────────────────────
+
+  function makePlaceholderHtml(wrapClass) {
+    return '<div class="' + wrapClass + ' img-loading"><span class="nft-img-placeholder">🐦</span></div>';
+  }
+
+  async function renderNftCard(assetList) {
+    const single = assetList.length === 1;
+    const body   = document.getElementById('nft-card-body');
+
+    if (single) {
+      // Hero layout: big image, then name + ASA below
+      const a = assetList[0];
+      body.innerHTML =
+        '<div class="single-nft-body">' +
+          '<div class="nft-hero img-loading" id="hero-wrap-0">' +
+            '<span class="nft-hero-placeholder">🐦</span>' +
+          '</div>' +
+          '<div class="single-nft-name" id="nft-name-0">' + escHtml(a.asaName) + '</div>' +
+          '<div class="single-nft-asa">ASA ' + a.asaId + '</div>' +
+        '</div>';
+
+      // Fetch image asynchronously — update hero once loaded
+      fetchNftImage(a.asaId).then(function(imgUrl) {
+        const wrap = document.getElementById('hero-wrap-0');
+        if (!wrap) return;
+        wrap.classList.remove('img-loading');
+        if (imgUrl) {
+          wrap.innerHTML = '<img src="' + imgUrl + '" alt="' + escHtml(a.asaName) + '" onerror="this.parentNode.innerHTML=\'<span class=nft-hero-placeholder>🐦</span>\'">';
+        } else {
+          wrap.innerHTML = '<span class="nft-hero-placeholder">🐦</span>';
+        }
+      });
+
+    } else {
+      // List layout: small thumbnail per puffin
+      document.getElementById('card-title').textContent = 'You Are Receiving (' + assetList.length + ')';
+
+      var rows = assetList.map(function(a, i) {
+        return (
+          '<div class="nft-item">' +
+            '<div class="nft-img-wrap img-loading" id="thumb-wrap-' + i + '">' +
+              '<span class="nft-img-placeholder">🐦</span>' +
+            '</div>' +
+            '<div class="nft-info">' +
+              '<div class="nft-name">' + escHtml(a.asaName) + '</div>' +
+              '<div class="nft-asa">ASA ' + a.asaId + '</div>' +
+            '</div>' +
+          '</div>'
+        );
+      }).join('');
+
+      body.innerHTML = '<div class="card-body">' + rows + '</div>';
+
+      // Fetch images for each in parallel
+      assetList.forEach(function(a, i) {
+        fetchNftImage(a.asaId).then(function(imgUrl) {
+          var wrap = document.getElementById('thumb-wrap-' + i);
+          if (!wrap) return;
+          wrap.classList.remove('img-loading');
+          if (imgUrl) {
+            wrap.innerHTML = '<img src="' + imgUrl + '" alt="' + escHtml(a.asaName) + '" onerror="this.parentNode.innerHTML=\'<span class=nft-img-placeholder>🐦</span>\'">';
+          } else {
+            wrap.innerHTML = '<span class="nft-img-placeholder">🐦</span>';
+          }
+        });
+      });
+    }
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  // ── Load gist ─────────────────────────────────────────────────────────────
+
   async function loadOptIn() {
     const params = new URLSearchParams(window.location.search);
     const gistId = params.get('gist');
@@ -230,7 +403,7 @@
     }
 
     try {
-      const res = await fetch(`https://api.github.com/gists/${gistId}`, {
+      const res = await fetch('https://api.github.com/gists/' + gistId, {
         headers: { 'Accept': 'application/vnd.github+json' },
       });
       if (!res.ok) throw new Error('Opt-in link not found or expired');
@@ -239,16 +412,39 @@
       const content = gist.files?.['optin.json']?.content;
       if (!content) throw new Error('Opt-in data missing from link');
 
-      const data  = JSON.parse(content);
-      asaId       = Number(data.asaId);
+      const data = JSON.parse(content);
       userAddress = data.addr;
 
-      document.getElementById('nft-name').textContent = data.asaName || 'Tufted Puffin';
-      document.getElementById('nft-asa').textContent  = 'ASA ' + data.asaId;
+      // ── Support both single and multi-asset gist formats ──────────────────
+      // Single: { asaId, asaName, addr }
+      // Multi:  { assets: [{ asaId, asaName }], addr }
+      if (data.assets && Array.isArray(data.assets)) {
+        assets = data.assets.map(function(a) {
+          return { asaId: Number(a.asaId), asaName: a.asaName || 'Tufted Puffin' };
+        });
+      } else {
+        assets = [{ asaId: Number(data.asaId), asaName: data.asaName || 'Tufted Puffin' }];
+      }
+
+      // Render NFT card with images
+      await renderNftCard(assets);
+
       document.getElementById('addr-display').textContent = userAddress;
+
+      // Update help text for multiple
+      if (assets.length > 1) {
+        document.getElementById('help-text').innerHTML =
+          'These are zero-amount opt-in transactions — one per puffin.<br>' +
+          'They are bundled into a single signing prompt.<br>' +
+          '<br>' +
+          'After signing, return to Discord and tap<br>' +
+          '<strong>✅ I have opted in</strong>';
+      }
+
       document.getElementById('status-box').style.display = 'none';
       document.getElementById('main-content').style.display = 'block';
 
+      // Auto-reconnect Pera session if it matches
       if (peraWallet) {
         peraWallet.reconnectSession()
           .then(function(accounts) {
@@ -258,7 +454,7 @@
               document.getElementById('btn-pera').classList.add('active');
               const signBtn = document.getElementById('sign-btn');
               signBtn.disabled    = false;
-              signBtn.textContent = 'Sign Opt-In in Pera';
+              signBtn.textContent = buildSignLabel('pera');
               setStep('step-connect', 'done');
               setStep('step-sign',    'active');
             }
@@ -270,6 +466,16 @@
       showStatus('error', '⚠️ ' + err.message + '.<br><br>Please request a new link from Discord.');
     }
   }
+
+  function buildSignLabel(walletName) {
+    var count = assets.length;
+    var label = count > 1
+      ? 'Sign ' + count + ' Opt-Ins in '
+      : 'Sign Opt-In in ';
+    return label + (walletName === 'pera' ? 'Pera' : 'Defly');
+  }
+
+  // ── Wallet connect ────────────────────────────────────────────────────────
 
   async function connectWallet(type) {
     if (!peraWallet || !deflyWallet) {
@@ -305,7 +511,7 @@
 
       const signBtn = document.getElementById('sign-btn');
       signBtn.disabled    = false;
-      signBtn.textContent = 'Sign Opt-In in ' + (type === 'pera' ? 'Pera' : 'Defly');
+      signBtn.textContent = buildSignLabel(type);
 
       setStep('step-connect', 'done');
       setStep('step-sign',    'active');
@@ -317,8 +523,12 @@
     }
   }
 
+  // ── Sign opt-in(s) ────────────────────────────────────────────────────────
+  // Builds one opt-in transaction per asset, groups them atomically so the
+  // user only needs to approve once in their wallet.
+
   async function signOptIn() {
-    if (!activeWallet || !asaId) return;
+    if (!activeWallet || !assets.length) return;
 
     const signBtn = document.getElementById('sign-btn');
     signBtn.disabled    = true;
@@ -326,19 +536,28 @@
     document.getElementById('status-box').style.display = 'none';
 
     try {
-      const algodClient    = new algosdk.Algodv2('', ALGOD_URL, 443);
+      const algodClient     = new algosdk.Algodv2('', ALGOD_URL, 443);
       const suggestedParams = await algodClient.getTransactionParams().do();
 
-      // A zero-amount asset transfer from/to self is the standard opt-in
-      const optInTxn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
-        from:            userAddress,
-        to:              userAddress,
-        amount:          0,
-        assetIndex:      asaId,
-        suggestedParams,
+      // Build one opt-in txn per asset
+      const txns = assets.map(function(a) {
+        return algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+          from:            userAddress,
+          to:              userAddress,
+          amount:          0,
+          assetIndex:      a.asaId,
+          suggestedParams: suggestedParams,
+        });
       });
 
-      const txnGroup = [{ txn: optInTxn, signers: [userAddress] }];
+      // Group atomically when more than one (single txn doesn't need a group ID)
+      if (txns.length > 1) {
+        algosdk.assignGroupID(txns);
+      }
+
+      const txnGroup = txns.map(function(txn) {
+        return { txn: txn, signers: [userAddress] };
+      });
 
       setStep('step-sign', 'active');
 
@@ -346,6 +565,7 @@
 
       signBtn.textContent = '⏳ Submitting…';
 
+      // sendRawTransaction accepts a flat Uint8Array array
       const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
       await algosdk.waitForConfirmation(algodClient, txId, 6);
 
@@ -359,7 +579,8 @@
 
       showStatus('success',
         '✅ Opt-in confirmed on-chain!<br><br>' +
-        'Go back to Discord and tap <strong>✅ I have opted in</strong> to receive your Tufted Puffin.'
+        'Go back to Discord and tap <strong>✅ I have opted in</strong> to receive your Tufted Puffin' +
+        (assets.length > 1 ? 's' : '') + '.'
       );
 
     } catch (err) {
