@@ -273,44 +273,36 @@
     return null;
   }
 
-  async function fetchNftImage(asaId) {
+async function fetchNftImage(asaId) {
     try {
-      const res  = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
-      if (!res.ok) return null;
-      const data = await res.json();
-      const rawUrl = data.asset?.params?.url || '';
+        // 1. Get ASA params from indexer
+        const res  = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
+        if (!res.ok) return null;
+        const data = await res.json();
+        const url  = (data.asset?.params?.url || '').trim();
+        if (!url) return null;
 
-      const gatewayUrl = toGatewayUrl(rawUrl);
-      if (!gatewayUrl) return null;
+        // 2. Strip #arc3 fragment and convert to gateway URL
+        const cleanUrl = url.replace(/#arc3$/, '');
+        const metaUrl  = cleanUrl.startsWith('ipfs://')
+            ? IPFS_GW + cleanUrl.slice(7)
+            : cleanUrl;
 
-      // If it looks like a metadata JSON endpoint, fetch and pull image field
-      const looksLikeJson =
-        gatewayUrl.endsWith('.json') ||
-        gatewayUrl.includes('/metadata') ||
-        rawUrl.includes('#arc3') ||
-        // IPFS URLs without an extension are usually metadata for ARC3
-        (rawUrl.startsWith('ipfs://') && !rawUrl.match(/\.(png|jpg|jpeg|gif|webp|svg)$/i));
+        // 3. Fetch the metadata JSON
+        const metaRes = await fetch(metaUrl);
+        if (!metaRes.ok) return null;
+        const meta = await metaRes.json();
 
-      if (looksLikeJson) {
-        try {
-          const metaRes = await fetch(gatewayUrl);
-          if (metaRes.ok) {
-            const meta = await metaRes.json();
-            const imgRaw = meta.image || meta.image_url || meta.animation_url || '';
-            const imgUrl = toGatewayUrl(imgRaw);
-            if (imgUrl) return imgUrl;
-          }
-        } catch (_) { /* fall through to URL itself */ }
-      }
+        // 4. Pull the image field and convert to gateway URL
+        const imageRaw = meta.image || meta.image_url || '';
+        if (!imageRaw) return null;
 
-      // If the URL itself looks like a direct image, use it
-      if (gatewayUrl.match(/\.(png|jpg|jpeg|gif|webp|svg)(\?|$)/i)) return gatewayUrl;
-
-      // Last resort — return the gateway URL and let the <img> decide
-      return gatewayUrl;
+        return imageRaw.startsWith('ipfs://')
+            ? IPFS_GW + imageRaw.slice(7)
+            : imageRaw;
 
     } catch (_) { return null; }
-  }
+}
 
   // ── NFT card rendering ────────────────────────────────────────────────────
 
