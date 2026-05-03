@@ -132,33 +132,49 @@ async function fetchNftImage(asaId) {
         if (!d.rawUrl) { d.error = 'No url field on ASA'; return d; }
 
         d.step = 'metadata';
-        // Strip fragment AND convert ipfs:// to gateway
         var stripped = d.rawUrl.split('#')[0];
-        d.metaUrl = stripped.startsWith('ipfs://')
-            ? 'https://ipfs.algonode.dev/ipfs/' + stripped.slice(7)
-            : stripped;
-        console.log('[img] metaUrl:', d.metaUrl);
+        var cid = stripped.startsWith('ipfs://') ? stripped.slice(7) : null;
 
-        var r2 = await fetch(d.metaUrl);
-        if (!r2.ok) { d.error = 'Metadata HTTP ' + r2.status; return d; }
-        var meta = await r2.json();
+        // Try gateways in order until one works
+        var gateways = cid ? [
+            'https://ipfs.algonode.dev/ipfs/' + cid + '?optimizer=image&width=640',
+            'https://ipfs.algonode.xyz/ipfs/' + cid,
+            'https://cloudflare-ipfs.com/ipfs/' + cid,
+            'https://ipfs.io/ipfs/' + cid,
+        ] : [ stripped ];
+
+        var meta = null;
+        for (var gi = 0; gi < gateways.length; gi++) {
+            d.metaUrl = gateways[gi];
+            console.log('[img] trying metaUrl:', d.metaUrl);
+            try {
+                var r2 = await fetch(d.metaUrl);
+                console.log('[img] metadata status:', r2.status, 'from', d.metaUrl);
+                if (r2.ok) { meta = await r2.json(); break; }
+                d.error = 'Metadata HTTP ' + r2.status + ' from ' + d.metaUrl;
+            } catch(fe) {
+                d.error = 'Fetch error: ' + fe.message + ' from ' + d.metaUrl;
+                console.warn('[img] gateway failed:', d.metaUrl, fe.message);
+            }
+        }
+
+        if (!meta) { d.error = 'All gateways failed. Last error: ' + d.error; return d; }
+
         d.metaKeys = Object.keys(meta).join(', ');
         console.log('[img] meta:', JSON.stringify(meta));
 
         d.step = 'image field';
-        // Handle common variations in metadata structure
         d.imageRaw = meta.image
             || meta.image_url
             || (meta.properties && meta.properties.image)
-            || (meta.media && meta.media.image)
             || null;
         console.log('[img] imageRaw:', d.imageRaw);
-        if (!d.imageRaw) { d.error = 'No image field. Keys found: ' + d.metaKeys; return d; }
+        if (!d.imageRaw) { d.error = 'No image field. Keys: ' + d.metaKeys; return d; }
 
         d.step = 'build url';
-        var cid = d.imageRaw.startsWith('ipfs://') ? d.imageRaw.slice(7) : d.imageRaw;
-        cid = cid.split('#')[0].split('?')[0];
-        d.finalUrl = 'https://ipfs.algonode.dev/ipfs/' + cid + '#i?optimizer=image&width=640';
+        var imgCid = d.imageRaw.startsWith('ipfs://') ? d.imageRaw.slice(7) : d.imageRaw;
+        imgCid = imgCid.split('#')[0].split('?')[0];
+        d.finalUrl = 'https://ipfs.algonode.dev/ipfs/' + imgCid + '#i?optimizer=image&width=640';
         console.log('[img] finalUrl:', d.finalUrl);
 
     } catch(e) {
