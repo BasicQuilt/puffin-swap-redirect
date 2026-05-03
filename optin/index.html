@@ -174,7 +174,7 @@ async function fetchNftImage(asaId) {
         d.step = 'build url';
         var imgCid = d.imageRaw.startsWith('ipfs://') ? d.imageRaw.slice(7) : d.imageRaw;
         imgCid = imgCid.split('#')[0].split('?')[0];
-        d.finalUrl = 'https://ipfs.algonode.dev/ipfs/' + imgCid + '#i?optimizer=image&width=640';
+        d.finalUrl = 'https://ipfs.algonode.dev/ipfs/' + imgCid + '?optimizer=image&width=640';
         console.log('[img] finalUrl:', d.finalUrl);
 
     } catch(e) {
