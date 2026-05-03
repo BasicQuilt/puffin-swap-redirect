@@ -120,41 +120,53 @@
   function setStep(id,state){document.getElementById(id).className='step '+state;}
   function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-  async function fetchNftImage(asaId){
-    var d={asaId:asaId,step:'start',rawUrl:null,metaUrl:null,imageRaw:null,finalUrl:null,error:null,metaKeys:null};
-    try{
-      d.step='indexer';
-      var r1=await fetch(INDEXER_URL+'/v2/assets/'+asaId);
-      console.log('[img] indexer status:',r1.status,'for ASA',asaId);
-      if(!r1.ok){d.error='Indexer HTTP '+r1.status;return d;}
-      var j1=await r1.json();
-      d.rawUrl=(j1.asset&&j1.asset.params&&j1.asset.params.url)||null;
-      console.log('[img] rawUrl:',d.rawUrl);
-      if(!d.rawUrl){d.error='No url field on ASA';return d;}
+async function fetchNftImage(asaId) {
+    var d = { asaId:asaId, step:'start', rawUrl:null, metaUrl:null, imageRaw:null, finalUrl:null, error:null, metaKeys:null };
+    try {
+        d.step = 'indexer';
+        var r1 = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
+        if (!r1.ok) { d.error = 'Indexer HTTP ' + r1.status; return d; }
+        var j1 = await r1.json();
+        d.rawUrl = (j1.asset && j1.asset.params && j1.asset.params.url) || null;
+        console.log('[img] rawUrl:', d.rawUrl);
+        if (!d.rawUrl) { d.error = 'No url field on ASA'; return d; }
 
-      d.step='metadata';
-      d.metaUrl=d.rawUrl.split('#')[0];
-      console.log('[img] metaUrl:',d.metaUrl);
-      var r2=await fetch(d.metaUrl);
-      console.log('[img] metadata status:',r2.status);
-      if(!r2.ok){d.error='Metadata HTTP '+r2.status;return d;}
-      var meta=await r2.json();
-      d.metaKeys=Object.keys(meta).join(', ');
-      console.log('[img] meta:',meta);
+        d.step = 'metadata';
+        // Strip fragment AND convert ipfs:// to gateway
+        var stripped = d.rawUrl.split('#')[0];
+        d.metaUrl = stripped.startsWith('ipfs://')
+            ? 'https://ipfs.algonode.dev/ipfs/' + stripped.slice(7)
+            : stripped;
+        console.log('[img] metaUrl:', d.metaUrl);
 
-      d.step='image field';
-      d.imageRaw=meta.image||meta.image_url||null;
-      console.log('[img] imageRaw:',d.imageRaw);
-      if(!d.imageRaw){d.error='No image/image_url in metadata. Keys: '+d.metaKeys;return d;}
+        var r2 = await fetch(d.metaUrl);
+        if (!r2.ok) { d.error = 'Metadata HTTP ' + r2.status; return d; }
+        var meta = await r2.json();
+        d.metaKeys = Object.keys(meta).join(', ');
+        console.log('[img] meta:', JSON.stringify(meta));
 
-      d.step='build url';
-      var cid=d.imageRaw.startsWith('ipfs://')?d.imageRaw.slice(7):d.imageRaw;
-      cid=cid.split('#')[0].split('?')[0];
-      d.finalUrl='https://ipfs.algonode.dev/ipfs/'+cid+'#i?optimizer=image&width=640';
-      console.log('[img] finalUrl:',d.finalUrl);
-    }catch(e){d.error='('+d.step+') '+e.message;console.error('[img] exception:',e);}
+        d.step = 'image field';
+        // Handle common variations in metadata structure
+        d.imageRaw = meta.image
+            || meta.image_url
+            || (meta.properties && meta.properties.image)
+            || (meta.media && meta.media.image)
+            || null;
+        console.log('[img] imageRaw:', d.imageRaw);
+        if (!d.imageRaw) { d.error = 'No image field. Keys found: ' + d.metaKeys; return d; }
+
+        d.step = 'build url';
+        var cid = d.imageRaw.startsWith('ipfs://') ? d.imageRaw.slice(7) : d.imageRaw;
+        cid = cid.split('#')[0].split('?')[0];
+        d.finalUrl = 'https://ipfs.algonode.dev/ipfs/' + cid + '#i?optimizer=image&width=640';
+        console.log('[img] finalUrl:', d.finalUrl);
+
+    } catch(e) {
+        d.error = '(' + d.step + ') ' + e.message;
+        console.error('[img] exception:', e);
+    }
     return d;
-  }
+}
 
   async function renderNftCard(assetList){
     var a=assetList[0];
