@@ -237,7 +237,7 @@
 
   const ALGOD_URL   = 'https://mainnet-api.algonode.cloud';
   const INDEXER_URL = 'https://mainnet-idx.algonode.cloud';
-  const IPFS_GW     = 'https://ipfs.algonode.xyz/ipfs/';
+  const IPFS_GW = 'https://ipfs.algonode.dev/ipfs/';
 
   // Normalised list of assets to opt into — always an array internally
   let assets       = []; // [{ asaId: Number, asaName: String }]
@@ -281,12 +281,9 @@ async function fetchNftImage(asaId) {
         const url  = (data.asset?.params?.url || '').trim();
         if (!url) return null;
 
-        // Strip fragment entirely (#arc3, #arc3?optimizer=..., etc.)
         const cleanUrl = url.split('#')[0];
-
-        // Convert ipfs:// to gateway, otherwise use as-is (already https)
-        const metaUrl = cleanUrl.startsWith('ipfs://')
-            ? IPFS_GW + cleanUrl.slice(7)
+        const metaUrl  = cleanUrl.startsWith('ipfs://')
+            ? 'https://ipfs.algonode.dev/ipfs/' + cleanUrl.slice(7)
             : cleanUrl;
 
         const metaRes = await fetch(metaUrl);
@@ -296,9 +293,11 @@ async function fetchNftImage(asaId) {
         const imageRaw = meta.image || meta.image_url || '';
         if (!imageRaw) return null;
 
-        return imageRaw.startsWith('ipfs://')
-            ? IPFS_GW + imageRaw.slice(7)
+        const cid = imageRaw.startsWith('ipfs://')
+            ? imageRaw.slice(7)
             : imageRaw;
+
+        return 'https://ipfs.algonode.dev/ipfs/' + cid + '#i?optimizer=image&width=640';
 
     } catch (_) { return null; }
 }
