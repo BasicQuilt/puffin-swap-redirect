@@ -25,30 +25,69 @@
     .card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);}
     .card-title{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
     .single-nft-body{padding:16px 18px;}
-    .nft-hero{width:100%;aspect-ratio:1/1;max-height:280px;border-radius:12px;background:var(--border);border:1px solid var(--border2);margin-bottom:14px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;overflow:hidden;}
-    .nft-hero img{width:100%;height:100%;object-fit:cover;display:block;}
-    .nft-hero-placeholder{font-size:72px;}
     .single-nft-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:4px;}
     .single-nft-asa{font-family:var(--mono);font-size:11px;color:var(--muted);}
-    .debug-box{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:10px 12px;margin:8px;font-family:var(--mono);font-size:10px;color:var(--warn);word-break:break-all;line-height:1.8;}
+
+    /* ── Hero image container ─────────────────────────────────────────────── */
+    .nft-hero{
+      width:100%;aspect-ratio:1/1;max-height:280px;border-radius:12px;
+      background:var(--border);border:1px solid var(--border2);margin-bottom:14px;
+      display:flex;align-items:center;justify-content:center;
+      flex-direction:column;gap:10px;overflow:hidden;position:relative;
+    }
+    .nft-hero img{width:100%;height:100%;object-fit:cover;display:block;border-radius:12px;}
+
+    /* Spinner */
+    .spinner{
+      width:40px;height:40px;border-radius:50%;
+      border:3px solid var(--border2);
+      border-top-color:var(--accent);
+      animation:spin .9s linear infinite;
+      flex-shrink:0;
+    }
+    @keyframes spin{to{transform:rotate(360deg);}}
+
+    .loading-label{font-family:var(--mono);font-size:11px;color:var(--muted);text-align:center;padding:0 16px;}
+    .retry-label{font-family:var(--mono);font-size:10px;color:var(--accent);margin-top:2px;}
+
+    /* Debug box */
+    .debug-box{
+      background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);
+      border-radius:8px;padding:10px 12px;margin:8px;
+      font-family:var(--mono);font-size:10px;color:var(--warn);
+      word-break:break-all;line-height:1.8;width:calc(100% - 16px);
+    }
     .debug-box a{color:var(--accent);text-decoration:underline;}
+
+    /* ── Retry button shown after all attempts exhausted ─────────────────── */
+    .retry-btn{
+      margin-top:6px;padding:7px 16px;border-radius:8px;border:1px solid var(--accent);
+      background:transparent;color:var(--accent);font-family:var(--sans);
+      font-size:12px;cursor:pointer;transition:all .15s;
+    }
+    .retry-btn:hover{background:rgba(79,142,247,.1);}
+
     .addr-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 16px;margin-bottom:12px;}
     .addr-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:5px;}
     .addr-value{font-family:var(--mono);font-size:11px;color:#8899cc;word-break:break-all;line-height:1.5;}
+
     .action-section{padding:4px 18px 18px;display:flex;flex-direction:column;gap:8px;}
     .sign-btn{width:100%;padding:16px;border-radius:12px;border:none;font-family:var(--sans);font-size:15px;font-weight:600;background:var(--accent);color:#fff;cursor:pointer;box-shadow:0 4px 20px rgba(79,142,247,.3);transition:all .2s ease;}
     .sign-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 28px rgba(79,142,247,.4);}
     .sign-btn:disabled{background:var(--border);color:var(--muted);cursor:not-allowed;box-shadow:none;}
     .sign-btn.success{background:var(--success);box-shadow:0 4px 20px rgba(34,201,122,.3);}
+
     .wallet-row{display:flex;gap:8px;}
     .wallet-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--border2);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;}
     .wallet-btn:hover{border-color:var(--accent);color:var(--accent);}
     .wallet-btn.active{border-color:var(--success);color:var(--success);background:rgba(34,201,122,.06);}
+
     .status-box{padding:14px 18px;border-radius:12px;border:1px solid;font-size:13px;margin-bottom:12px;line-height:1.6;}
     .status-info{background:rgba(79,142,247,.08);border-color:rgba(79,142,247,.3);color:#7fb3ff;}
     .status-success{background:rgba(34,201,122,.08);border-color:rgba(34,201,122,.3);color:var(--success);}
     .status-error{background:rgba(255,80,80,.08);border-color:rgba(255,80,80,.3);color:#ff8080;}
     .status-warn{background:rgba(245,166,35,.08);border-color:rgba(245,166,35,.3);color:var(--warn);}
+
     .step-indicator{display:flex;align-items:center;gap:8px;padding:16px 18px 14px;font-size:12px;color:var(--muted);font-family:var(--mono);}
     .step{display:flex;align-items:center;gap:4px;}
     .step-num{width:20px;height:20px;border-radius:50%;border:1px solid;display:flex;align-items:center;justify-content:center;font-size:10px;}
@@ -56,10 +95,9 @@
     .step.active .step-num{border-color:var(--accent);color:var(--accent);}
     .step.pending .step-num{border-color:var(--muted);}
     .step-line{flex:1;height:1px;background:var(--border);}
+
     .help{text-align:center;font-size:12px;color:var(--muted);padding:8px 0 4px;line-height:1.7;}
     #main-content{display:none;}
-    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
-    .img-loading{background:linear-gradient(90deg,var(--border) 25%,var(--border2) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
   </style>
 </head>
 <body>
@@ -104,173 +142,316 @@
     </p>
   </div>
 </div>
+
 <script>
-  function resolveConstructor(candidates){for(var i=0;i<candidates.length;i++){var parts=candidates[i].split('.');var obj=window;for(var j=0;j<parts.length;j++){if(obj==null){obj=null;break;}obj=obj[parts[j]];}if(typeof obj==='function')return obj;}return null;}
-  var PeraWalletConnect=resolveConstructor(['peraWalletConnect.PeraWalletConnect','PeraWalletConnect']);
-  var DeflyWalletConnect=resolveConstructor(['deflyWalletConnect.DeflyWalletConnect','DeflyWalletConnect']);
-  if(!PeraWalletConnect||!DeflyWalletConnect){var sb=document.getElementById('status-box');sb.className='status-box status-error';sb.innerHTML='⚠️ Wallet scripts failed to load.<br>Please hard-refresh and try again.';sb.style.display='block';}
+  function resolveConstructor(candidates) {
+    for (var i = 0; i < candidates.length; i++) {
+      var parts = candidates[i].split('.');
+      var obj = window;
+      for (var j = 0; j < parts.length; j++) { if (obj == null) { obj = null; break; } obj = obj[parts[j]]; }
+      if (typeof obj === 'function') return obj;
+    }
+    return null;
+  }
+  var PeraWalletConnect  = resolveConstructor(['peraWalletConnect.PeraWalletConnect',  'PeraWalletConnect']);
+  var DeflyWalletConnect = resolveConstructor(['deflyWalletConnect.DeflyWalletConnect', 'DeflyWalletConnect']);
+  if (!PeraWalletConnect || !DeflyWalletConnect) {
+    var sb = document.getElementById('status-box');
+    sb.className = 'status-box status-error';
+    sb.innerHTML = '⚠️ Wallet scripts failed to load.<br>Please hard-refresh and try again.';
+    sb.style.display = 'block';
+  }
 
-  var ALGOD_URL='https://mainnet-api.algonode.cloud';
-  var INDEXER_URL='https://mainnet-idx.algonode.cloud';
-  var assets=[],userAddress='',activeWallet=null,walletType=null;
-  var peraWallet=PeraWalletConnect?new PeraWalletConnect():null;
-  var deflyWallet=DeflyWalletConnect?new DeflyWalletConnect():null;
+  var ALGOD_URL   = 'https://mainnet-api.algonode.cloud';
+  var INDEXER_URL = 'https://mainnet-idx.algonode.cloud';
 
-  function showStatus(type,msg){var el=document.getElementById('status-box');el.className='status-box status-'+type;el.innerHTML=msg;el.style.display='block';}
-  function setStep(id,state){document.getElementById(id).className='step '+state;}
-  function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  var assets = [], userAddress = '', activeWallet = null, walletType = null;
+  var peraWallet  = PeraWalletConnect  ? new PeraWalletConnect()  : null;
+  var deflyWallet = DeflyWalletConnect ? new DeflyWalletConnect() : null;
 
-async function fetchNftImage(asaId) {
-    var d = { asaId:asaId, step:'start', rawUrl:null, metaUrl:null, imageRaw:null, finalUrl:null, error:null, metaKeys:null };
+  function showStatus(type, msg) {
+    var el = document.getElementById('status-box');
+    el.className = 'status-box status-' + type;
+    el.innerHTML = msg;
+    el.style.display = 'block';
+  }
+  function setStep(id, state) { document.getElementById(id).className = 'step ' + state; }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+  // ── Resolve metadata + image CID from ASA ────────────────────────────────
+  async function resolveImageUrl(asaId) {
+    var d = { asaId:asaId, step:'indexer', rawUrl:null, metaUrl:null, imageRaw:null, imgCid:null, error:null, metaKeys:null };
     try {
-        d.step = 'indexer';
-        var r1 = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
-        if (!r1.ok) { d.error = 'Indexer HTTP ' + r1.status; return d; }
-        var j1 = await r1.json();
-        d.rawUrl = (j1.asset && j1.asset.params && j1.asset.params.url) || null;
-        console.log('[img] rawUrl:', d.rawUrl);
-        if (!d.rawUrl) { d.error = 'No url field on ASA'; return d; }
+      var r1 = await fetch(INDEXER_URL + '/v2/assets/' + asaId);
+      if (!r1.ok) { d.error = 'Indexer HTTP ' + r1.status; return d; }
+      var j1 = await r1.json();
+      d.rawUrl = (j1.asset && j1.asset.params && j1.asset.params.url) || null;
+      if (!d.rawUrl) { d.error = 'No url field on ASA'; return d; }
 
-        d.step = 'metadata';
-        var stripped = d.rawUrl.split('#')[0];
-        var cid = stripped.startsWith('ipfs://') ? stripped.slice(7) : null;
+      d.step = 'metadata';
+      var stripped = d.rawUrl.split('#')[0];
+      var metaCid  = stripped.startsWith('ipfs://') ? stripped.slice(7) : null;
 
-        // Try gateways in order until one works
-        var gateways = cid ? [
-            'https://ipfs.algonode.dev/ipfs/' + cid + '?optimizer=image&width=640',
-            'https://ipfs.algonode.xyz/ipfs/' + cid,
-            'https://cloudflare-ipfs.com/ipfs/' + cid,
-            'https://ipfs.io/ipfs/' + cid,
-        ] : [ stripped ];
+      var metaGateways = metaCid ? [
+        'https://ipfs.algonode.dev/ipfs/' + metaCid + '?optimizer=image&width=640',
+        'https://ipfs.algonode.xyz/ipfs/' + metaCid,
+        'https://cloudflare-ipfs.com/ipfs/' + metaCid,
+        'https://ipfs.io/ipfs/'             + metaCid,
+      ] : [stripped];
 
-        var meta = null;
-        for (var gi = 0; gi < gateways.length; gi++) {
-            d.metaUrl = gateways[gi];
-            console.log('[img] trying metaUrl:', d.metaUrl);
-            try {
-                var r2 = await fetch(d.metaUrl);
-                console.log('[img] metadata status:', r2.status, 'from', d.metaUrl);
-                if (r2.ok) { meta = await r2.json(); break; }
-                d.error = 'Metadata HTTP ' + r2.status + ' from ' + d.metaUrl;
-            } catch(fe) {
-                d.error = 'Fetch error: ' + fe.message + ' from ' + d.metaUrl;
-                console.warn('[img] gateway failed:', d.metaUrl, fe.message);
-            }
-        }
+      var meta = null;
+      for (var gi = 0; gi < metaGateways.length; gi++) {
+        d.metaUrl = metaGateways[gi];
+        try {
+          var r2 = await fetch(d.metaUrl);
+          if (r2.ok) { meta = await r2.json(); break; }
+          d.error = 'Metadata HTTP ' + r2.status;
+        } catch(fe) { d.error = 'Fetch error: ' + fe.message; }
+      }
+      if (!meta) { d.error = 'All metadata gateways failed. ' + d.error; return d; }
 
-        if (!meta) { d.error = 'All gateways failed. Last error: ' + d.error; return d; }
+      d.metaKeys = Object.keys(meta).join(', ');
+      d.step     = 'image field';
+      d.imageRaw = meta.image || meta.image_url || (meta.properties && meta.properties.image) || null;
+      if (!d.imageRaw) { d.error = 'No image field. Keys: ' + d.metaKeys; return d; }
 
-        d.metaKeys = Object.keys(meta).join(', ');
-        console.log('[img] meta:', JSON.stringify(meta));
-
-        d.step = 'image field';
-        d.imageRaw = meta.image
-            || meta.image_url
-            || (meta.properties && meta.properties.image)
-            || null;
-        console.log('[img] imageRaw:', d.imageRaw);
-        if (!d.imageRaw) { d.error = 'No image field. Keys: ' + d.metaKeys; return d; }
-
-        d.step = 'build url';
-        var imgCid = d.imageRaw.startsWith('ipfs://') ? d.imageRaw.slice(7) : d.imageRaw;
-        imgCid = imgCid.split('#')[0].split('?')[0];
-        d.finalUrl = 'https://ipfs.algonode.dev/ipfs/' + imgCid + '#arc3?optimizer=image&width=640';
-        console.log('[img] finalUrl:', d.finalUrl);
+      d.step   = 'build url';
+      d.imgCid = d.imageRaw.startsWith('ipfs://') ? d.imageRaw.slice(7) : d.imageRaw;
+      d.imgCid = d.imgCid.split('#')[0].split('?')[0];
 
     } catch(e) {
-        d.error = '(' + d.step + ') ' + e.message;
-        console.error('[img] exception:', e);
+      d.error = '(' + d.step + ') ' + e.message;
     }
     return d;
-}
+  }
 
-  async function renderNftCard(assetList){
-    var a=assetList[0];
-    var body=document.getElementById('nft-card-body');
-    body.innerHTML='<div class="single-nft-body"><div class="nft-hero img-loading" id="hero-wrap"><span class="nft-hero-placeholder">🐦</span></div><div class="single-nft-name">'+esc(a.asaName)+'</div><div class="single-nft-asa">ASA '+a.asaId+'</div></div>';
+  // ── Warm the IPFS cache by hitting all gateways with a HEAD request ───────
+  // This is what forces the gateway to fetch + pin the content so the
+  // subsequent <img> load doesn't time out on a cold cache.
+  async function warmIpfsCache(cid) {
+    var gateways = [
+      'https://ipfs.algonode.dev/ipfs/'  + cid + '?optimizer=image&width=640',
+      'https://ipfs.algonode.xyz/ipfs/'  + cid,
+      'https://cloudflare-ipfs.com/ipfs/' + cid,
+      'https://ipfs.io/ipfs/'             + cid,
+    ];
+    // Fire all HEAD requests in parallel — don't await, just warm
+    gateways.forEach(function(url) {
+      fetch(url, { method: 'HEAD' }).catch(function() {});
+    });
+  }
 
-    var result=await fetchNftImage(a.asaId);
-    var wrap=document.getElementById('hero-wrap');
-    if(!wrap)return;
-    wrap.classList.remove('img-loading');
+  // ── Try to load an image URL, with timeout + retry ────────────────────────
+  function tryLoadImage(src, timeoutMs) {
+    return new Promise(function(resolve) {
+      var img    = new Image();
+      var timer  = setTimeout(function() { img.src = ''; resolve(null); }, timeoutMs);
+      img.onload = function() { clearTimeout(timer); resolve(img); };
+      img.onerror = function() { clearTimeout(timer); resolve(null); };
+      img.src = src;
+    });
+  }
 
-    if(result.finalUrl){
-      var img=new Image();
-      img.style.cssText='width:100%;height:100%;object-fit:cover;display:none;';
-      img.onload=function(){
-        var ph=wrap.querySelector('.nft-hero-placeholder');
-        if(ph)ph.remove();
-        img.style.display='block';
-        console.log('[img] loaded OK');
-      };
-      img.onerror=function(){
-        console.error('[img] browser refused to load:',result.finalUrl);
-        wrap.innerHTML='<span class="nft-hero-placeholder">🐦</span><div class="debug-box"><strong>⚠️ URL built but browser failed to load image</strong><br><br>URL: <a href="'+esc(result.finalUrl)+'" target="_blank">'+esc(result.finalUrl)+'</a><br><br>Raw ASA url: '+esc(result.rawUrl||'null')+'<br>image field: '+esc(result.imageRaw||'null')+'</div>';
-      };
-      img.src=result.finalUrl;
-      wrap.appendChild(img);
-    }else{
-      wrap.innerHTML='<span class="nft-hero-placeholder">🐦</span><div class="debug-box"><strong>⚠️ Image resolution failed at step: '+esc(result.step||'?')+'</strong><br><br>Error: '+esc(result.error||'none')+'<br><br>ASA ID: '+esc(String(result.asaId))+'<br>Raw URL: '+esc(result.rawUrl||'null')+'<br>Meta URL: '+esc(result.metaUrl||'null')+'<br>image field: '+esc(result.imageRaw||'null')+(result.metaKeys?'<br>Meta keys: '+esc(result.metaKeys):'')+'</div>';
+  // ── Render NFT hero with warming + retry loop ─────────────────────────────
+  async function renderNftCard(assetList) {
+    var a    = assetList[0];
+    var body = document.getElementById('nft-card-body');
+
+    // Skeleton while we resolve
+    body.innerHTML =
+      '<div class="single-nft-body">' +
+        '<div class="nft-hero" id="hero-wrap">' +
+          '<div class="spinner"></div>' +
+          '<div class="loading-label">Resolving NFT metadata…</div>' +
+        '</div>' +
+        '<div class="single-nft-name">' + esc(a.asaName) + '</div>' +
+        '<div class="single-nft-asa">ASA ' + a.asaId + '</div>' +
+      '</div>';
+
+    var d = await resolveImageUrl(a.asaId);
+    var wrap = document.getElementById('hero-wrap');
+    if (!wrap) return;
+
+    if (!d.imgCid) {
+      showDebug(wrap, d, null);
+      return;
+    }
+
+    // Image candidate URLs in preference order
+    var imgUrls = [
+      'https://ipfs.algonode.dev/ipfs/' + d.imgCid + '#arc3?optimizer=image&width=640',
+      'https://ipfs.algonode.xyz/ipfs/' + d.imgCid,
+      'https://cloudflare-ipfs.com/ipfs/' + d.imgCid,
+      'https://ipfs.io/ipfs/'             + d.imgCid,
+    ];
+
+    // Fire warming requests at all gateways simultaneously
+    wrap.innerHTML =
+      '<div class="spinner"></div>' +
+      '<div class="loading-label">Warming image cache…</div>' +
+      '<div class="retry-label" id="retry-label"></div>';
+    warmIpfsCache(d.imgCid);
+
+    // Retry loop — try each URL, wait, retry up to 4 rounds
+    var MAX_ROUNDS = 4;
+    var loaded     = null;
+
+    for (var round = 0; round < MAX_ROUNDS && !loaded; round++) {
+      var retryEl = document.getElementById('retry-label');
+      if (retryEl) {
+        retryEl.textContent = round === 0
+          ? 'Attempt 1 of ' + MAX_ROUNDS + '…'
+          : 'Retrying… (' + (round + 1) + ' of ' + MAX_ROUNDS + ')';
+      }
+
+      for (var ui = 0; ui < imgUrls.length && !loaded; ui++) {
+        var result = await tryLoadImage(imgUrls[ui], 8000);
+        if (result) {
+          loaded = result;
+          console.log('[img] loaded from:', imgUrls[ui]);
+          break;
+        }
+        console.warn('[img] failed:', imgUrls[ui]);
+      }
+
+      if (!loaded && round < MAX_ROUNDS - 1) {
+        var waitEl = document.getElementById('retry-label');
+        if (waitEl) waitEl.textContent = 'Waiting for IPFS… retrying in 4s';
+        await sleep(4000);
+      }
+    }
+
+    wrap = document.getElementById('hero-wrap');
+    if (!wrap) return;
+
+    if (loaded) {
+      loaded.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;border-radius:12px;';
+      wrap.innerHTML = '';
+      wrap.appendChild(loaded);
+    } else {
+      showDebug(wrap, d, imgUrls[0]);
     }
   }
 
-  async function loadOptIn(){
-    var params=new URLSearchParams(window.location.search);
-    var gistId=params.get('gist');
-    if(!gistId){document.getElementById('status-box').style.display='none';document.getElementById('main-content').innerHTML='<p style="text-align:center;padding:40px;color:var(--muted)">⚠️ Invalid opt-in link.</p>';document.getElementById('main-content').style.display='block';return;}
-    try{
-      var r=await fetch('https://api.github.com/gists/'+gistId,{headers:{'Accept':'application/vnd.github+json'}});
-      if(!r.ok)throw new Error('Opt-in link not found or expired');
-      var gist=await r.json();
-      var content=gist.files&&gist.files['optin.json']&&gist.files['optin.json'].content;
-      if(!content)throw new Error('Opt-in data missing from link');
-      var data=JSON.parse(content);
-      userAddress=data.addr;
-      assets=data.assets&&Array.isArray(data.assets)?data.assets.map(function(a){return{asaId:Number(a.asaId),asaName:a.asaName||'Tufted Puffin'};}): [{asaId:Number(data.asaId),asaName:data.asaName||'Tufted Puffin'}];
+  function showDebug(wrap, d, attemptedUrl) {
+    var lines = ['<strong>⚠️ Image could not be loaded</strong><br>'];
+    if (attemptedUrl) {
+      lines.push('Last URL tried:<br><a href="' + esc(attemptedUrl) + '" target="_blank">' + esc(attemptedUrl) + '</a>');
+      lines.push('<br>IPFS may still be warming up. Try refreshing in a moment,<br>or tap the link above to check the image directly.');
+    } else {
+      lines.push('Failed at step: <em>' + esc(d.step || '?') + '</em>');
+      lines.push('Error: ' + esc(d.error || 'unknown'));
+      lines.push('Raw URL: ' + esc(d.rawUrl || 'null'));
+      lines.push('Meta URL: ' + esc(d.metaUrl || 'null'));
+      lines.push('image field: ' + esc(d.imageRaw || 'null'));
+      if (d.metaKeys) lines.push('Meta keys: ' + esc(d.metaKeys));
+    }
+    wrap.innerHTML =
+      '<span style="font-size:48px">🐦</span>' +
+      '<div class="debug-box">' + lines.join('<br>') + '</div>' +
+      '<button class="retry-btn" onclick="retryImage()">↺ Retry image</button>';
+  }
+
+  // Manual retry button — re-runs the full image resolution + warm cycle
+  async function retryImage() {
+    if (!assets.length) return;
+    await renderNftCard(assets);
+  }
+
+  // ── Load gist ─────────────────────────────────────────────────────────────
+  async function loadOptIn() {
+    var params = new URLSearchParams(window.location.search);
+    var gistId = params.get('gist');
+    if (!gistId) {
+      document.getElementById('status-box').style.display = 'none';
+      document.getElementById('main-content').innerHTML =
+        '<p style="text-align:center;padding:40px;color:var(--muted)">⚠️ Invalid opt-in link.<br>Please request a new one from Discord.</p>';
+      document.getElementById('main-content').style.display = 'block';
+      return;
+    }
+    try {
+      var r = await fetch('https://api.github.com/gists/' + gistId, { headers: { 'Accept': 'application/vnd.github+json' } });
+      if (!r.ok) throw new Error('Opt-in link not found or expired');
+      var gist    = await r.json();
+      var content = gist.files && gist.files['optin.json'] && gist.files['optin.json'].content;
+      if (!content) throw new Error('Opt-in data missing from link');
+      var data = JSON.parse(content);
+      userAddress = data.addr;
+      assets = data.assets && Array.isArray(data.assets)
+        ? data.assets.map(function(a) { return { asaId: Number(a.asaId), asaName: a.asaName || 'Tufted Puffin' }; })
+        : [{ asaId: Number(data.asaId), asaName: data.asaName || 'Tufted Puffin' }];
+
       await renderNftCard(assets);
-      document.getElementById('addr-display').textContent=userAddress;
-      document.getElementById('status-box').style.display='none';
-      document.getElementById('main-content').style.display='block';
-      if(peraWallet){peraWallet.reconnectSession().then(function(acc){if(acc.length&&acc[0].toLowerCase()===userAddress.toLowerCase()){walletType='pera';activeWallet=peraWallet;document.getElementById('btn-pera').classList.add('active');var s=document.getElementById('sign-btn');s.disabled=false;s.textContent='Sign Opt-In in Pera';setStep('step-connect','done');setStep('step-sign','active');}}).catch(function(){});}
-    }catch(e){showStatus('error','⚠️ '+e.message+'.<br><br>Please request a new link from Discord.');}
+      document.getElementById('addr-display').textContent = userAddress;
+      document.getElementById('status-box').style.display = 'none';
+      document.getElementById('main-content').style.display = 'block';
+
+      if (peraWallet) {
+        peraWallet.reconnectSession().then(function(acc) {
+          if (acc.length && acc[0].toLowerCase() === userAddress.toLowerCase()) {
+            walletType = 'pera'; activeWallet = peraWallet;
+            document.getElementById('btn-pera').classList.add('active');
+            var s = document.getElementById('sign-btn'); s.disabled = false; s.textContent = 'Sign Opt-In in Pera';
+            setStep('step-connect', 'done'); setStep('step-sign', 'active');
+          }
+        }).catch(function() {});
+      }
+    } catch(e) {
+      showStatus('error', '⚠️ ' + e.message + '.<br><br>Please request a new link from Discord.');
+    }
   }
 
-  async function connectWallet(type){
-    if(!peraWallet||!deflyWallet){showStatus('error','⚠️ Wallet scripts did not load.');return;}
-    try{
-      if(activeWallet&&walletType!==type)await activeWallet.disconnect().catch(function(){});
-      walletType=type;activeWallet=type==='pera'?peraWallet:deflyWallet;
-      var accounts=await activeWallet.connect();
-      if(accounts[0].toLowerCase()!==userAddress.toLowerCase()){showStatus('warn','⚠️ Wrong address connected.<br>Expected: <code>'+userAddress+'</code>');await activeWallet.disconnect().catch(function(){});return;}
-      document.getElementById('status-box').style.display='none';
-      document.getElementById('btn-'+type).classList.add('active');
-      document.getElementById(type==='pera'?'btn-defly':'btn-pera').classList.remove('active');
-      var s=document.getElementById('sign-btn');s.disabled=false;s.textContent='Sign Opt-In in '+(type==='pera'?'Pera':'Defly');
-      setStep('step-connect','done');setStep('step-sign','active');
-    }catch(e){if(e.message&&!e.message.includes('cancelled')&&!e.message.includes('closed'))showStatus('error','Connection failed: '+e.message);}
+  // ── Wallet connect ────────────────────────────────────────────────────────
+  async function connectWallet(type) {
+    if (!peraWallet || !deflyWallet) { showStatus('error', '⚠️ Wallet scripts did not load.'); return; }
+    try {
+      if (activeWallet && walletType !== type) await activeWallet.disconnect().catch(function() {});
+      walletType = type; activeWallet = type === 'pera' ? peraWallet : deflyWallet;
+      var accounts = await activeWallet.connect();
+      if (accounts[0].toLowerCase() !== userAddress.toLowerCase()) {
+        showStatus('warn', '⚠️ Wrong address connected.<br>Expected: <code style="font-size:10px">' + userAddress + '</code>');
+        await activeWallet.disconnect().catch(function() {}); return;
+      }
+      document.getElementById('status-box').style.display = 'none';
+      document.getElementById('btn-' + type).classList.add('active');
+      document.getElementById(type === 'pera' ? 'btn-defly' : 'btn-pera').classList.remove('active');
+      var s = document.getElementById('sign-btn'); s.disabled = false; s.textContent = 'Sign Opt-In in ' + (type === 'pera' ? 'Pera' : 'Defly');
+      setStep('step-connect', 'done'); setStep('step-sign', 'active');
+    } catch(e) {
+      if (e.message && !e.message.includes('cancelled') && !e.message.includes('closed'))
+        showStatus('error', 'Connection failed: ' + e.message);
+    }
   }
 
-  async function signOptIn(){
-    if(!activeWallet||!assets.length)return;
-    var s=document.getElementById('sign-btn');s.disabled=true;s.textContent='⏳ Waiting for wallet approval…';
-    document.getElementById('status-box').style.display='none';
-    try{
-      var client=new algosdk.Algodv2('',ALGOD_URL,443);
-      var sp=await client.getTransactionParams().do();
-      var txns=assets.map(function(a){return algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({from:userAddress,to:userAddress,amount:0,assetIndex:a.asaId,suggestedParams:sp});});
-      if(txns.length>1)algosdk.assignGroupID(txns);
-      var grp=txns.map(function(t){return{txn:t,signers:[userAddress]};});
-      setStep('step-sign','active');
-      var signed=await activeWallet.signTransaction([grp]);
-      s.textContent='⏳ Submitting…';
-      var res=await client.sendRawTransaction(signed).do();
-      await algosdk.waitForConfirmation(client,res.txId,6);
-      setStep('step-sign','done');setStep('step-done','done');
-      s.classList.add('success');s.textContent='✅ Opted In — Return to Discord';s.disabled=false;s.onclick=null;
-      showStatus('success','✅ Opt-in confirmed!<br><br>Go back to Discord and tap <strong>✅ I have opted in</strong>.');
-    }catch(e){
-      setStep('step-sign','active');s.disabled=false;s.textContent='Try Again';
-      showStatus('error','⚠️ '+(e.message&&e.message.includes('cancelled')?'Signing was cancelled.':e.message||'Unknown error'));
+  // ── Sign opt-in ───────────────────────────────────────────────────────────
+  async function signOptIn() {
+    if (!activeWallet || !assets.length) return;
+    var s = document.getElementById('sign-btn');
+    s.disabled = true; s.textContent = '⏳ Waiting for wallet approval…';
+    document.getElementById('status-box').style.display = 'none';
+    try {
+      var client = new algosdk.Algodv2('', ALGOD_URL, 443);
+      var sp     = await client.getTransactionParams().do();
+      var txns   = assets.map(function(a) {
+        return algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+          from: userAddress, to: userAddress, amount: 0, assetIndex: a.asaId, suggestedParams: sp,
+        });
+      });
+      if (txns.length > 1) algosdk.assignGroupID(txns);
+      var grp    = txns.map(function(t) { return { txn: t, signers: [userAddress] }; });
+      setStep('step-sign', 'active');
+      var signed = await activeWallet.signTransaction([grp]);
+      s.textContent = '⏳ Submitting…';
+      var res    = await client.sendRawTransaction(signed).do();
+      await algosdk.waitForConfirmation(client, res.txId, 6);
+      setStep('step-sign', 'done'); setStep('step-done', 'done');
+      s.classList.add('success'); s.textContent = '✅ Opted In — Return to Discord';
+      s.disabled = false; s.onclick = null;
+      showStatus('success', '✅ Opt-in confirmed!<br><br>Go back to Discord and tap <strong>✅ I have opted in</strong>.');
+    } catch(e) {
+      setStep('step-sign', 'active'); s.disabled = false; s.textContent = 'Try Again';
+      showStatus('error', '⚠️ ' + (e.message && e.message.includes('cancelled') ? 'Signing was cancelled.' : e.message || 'Unknown error'));
     }
   }
 
