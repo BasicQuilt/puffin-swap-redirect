@@ -715,7 +715,7 @@ async function fetchGist(id, filename) {
 }
 
 async function patchGist(id, filename, content) {
-    const res = await fetch(`http://144.217.139.239:8121/gist/${id}`, {
+    const res = await fetch(`https://basicworld.vercel.app/api/gist?id=${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ filename, content: JSON.stringify(content) })
