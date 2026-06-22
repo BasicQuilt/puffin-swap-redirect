@@ -626,6 +626,7 @@ function place(cx, cy) {
 
 // ── Mouse ──────────────────────────────────────────────────────────────────────
 area.addEventListener('mousedown', e => {
+  if (e.target.closest('.zoom-btns')) return;
   panning  = true;
   panMoved = false;
   panSX    = e.clientX - ox;
@@ -651,6 +652,7 @@ area.addEventListener('mousemove', e => {
 });
 
 area.addEventListener('mouseup', e => {
+  if (e.target.closest('.zoom-btns')) return;
   panning = false;
   if (!panMoved) place(e.clientX, e.clientY);
 });
@@ -677,6 +679,7 @@ area.addEventListener('wheel', e => {
 let tStart = null, tMoved = false;
 
 area.addEventListener('touchstart', e => {
+  if (e.target.closest('.zoom-btns')) return;
   e.preventDefault();
   if (e.touches.length === 1) {
     tStart  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
