@@ -715,22 +715,18 @@ async function fetchGist(id, filename) {
 }
 
 async function patchGist(id, filename, content) {
-  const GITHUB_TOKEN = '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';
-  const headers = {
-    'Content-Type':  'application/json',
-    'Accept':        'application/vnd.github+json',
-  };
-  if (GITHUB_TOKEN) headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
-
-  const res = await fetch(`https://api.github.com/gists/${id}`, {
-    method: 'PATCH',
-    headers,
-    body: JSON.stringify({
-      files: { [filename]: { content: JSON.stringify(content) } }
-    })
-  });
-  if (!res.ok) throw new Error(`Gist patch failed (${res.status})`);
-  return res.json();
+    const res = await fetch(`https://api.github.com/gists/${id}`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept':       'application/vnd.github+json',
+        },
+        body: JSON.stringify({
+            files: { [filename]: { content: JSON.stringify(content) } }
+        })
+    });
+    if (!res.ok) throw new Error(`Gist patch failed (${res.status})`);
+    return res.json();
 }
 
 // ── Canvas setup ───────────────────────────────────────────────────────────────
