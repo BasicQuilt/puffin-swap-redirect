@@ -336,6 +336,7 @@
         <span id="popupColor">#FFFFFF</span>
       </div>
       <div class="pixel-popup-row">Coords: <span id="popupCoords">—</span></div>
+      <div class="pixel-popup-row">Owner: <span id="popupOwner">—</span></div>
       <div class="pixel-popup-row" id="popupProtRow">Protected: <span id="popupProt">—</span></div>
     </div>
   </div>
@@ -517,16 +518,18 @@ function showPopup(x, y, clientX, clientY) {
   const remaining   = isProtected
     ? Math.ceil((pixel.protectedUntil - Date.now()) / 60000) + ' min'
     : 'No';
+  const owner = pixel?.ownerName || (pixel?.color && pixel.color !== '#FFFFFF' ? 'Unknown' : 'Empty');
 
   document.getElementById('popupDot').style.background    = color;
   document.getElementById('popupColor').textContent       = color;
   document.getElementById('popupCoords').textContent      = `(${x}, ${y})`;
+  document.getElementById('popupOwner').textContent       = owner;
   document.getElementById('popupProt').textContent        = remaining;
 
   const wrap   = document.getElementById('canvasWrap');
   const wRect  = wrap.getBoundingClientRect();
-  const popupW = 150;
-  const popupH = 80;
+  const popupW = 160;
+  const popupH = 95;
   let   left   = clientX - wRect.left + 12;
   let   top    = clientY - wRect.top  - popupH - 8;
   if (left + popupW > wRect.width)  left = clientX - wRect.left - popupW - 8;
