@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DDAO Pixel Canvas</title>
+<style>
+  /* ── Tokens ──────────────────────────────────────────────────── */
+  :root {
+    --bg:        #0d0d14;
+    --surface:   #14141f;
+    --border:    #1e1e30;
+    --purple:    #7b2fbe;
+    --purple-lo: #3d1760;
+    --purple-hi: #a855f7;
+    --cyan:      #22d3ee;
+    --text:      #e2e2f0;
+    --muted:     #6b6b8a;
+    --red:       #ef4444;
+    --green:     #22c55e;
+    --protected: rgba(100,180,255,0.35);
+    --radius:    6px;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Ambient grid background ─────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Layout ──────────────────────────────────────────────────── */
+  .page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 1100px;
+    padding: 24px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--purple-hi);
+    box-shadow: 0 0 12px var(--purple-hi);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .logo-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .logo-text span { color: var(--purple-hi); }
+
+  /* ── Session bar ─────────────────────────────────────────────── */
+  .session-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: var(--font-mono);
+  }
+
+  .stat-value.purple { color: var(--purple-hi); }
+  .stat-value.cyan   { color: var(--cyan); }
+  .stat-value.green  { color: var(--green); }
+
+  .divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
+
+  .timer-bar {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .timer-val { color: var(--cyan); font-size: 14px; font-weight: 600; }
+  .timer-val.urgent { color: var(--red); animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0.4; } }
+
+  /* ── Main canvas area ────────────────────────────────────────── */
+  .canvas-wrap {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .canvas-container {
+    position: relative;
+    flex: 1 1 500px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  #pixelCanvas {
+    display: block;
+    width: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+
+  /* Crosshair overlay */
+  .crosshair {
+    position: absolute;
+    pointer-events: none;
+    display: none;
+  }
+
+  .crosshair-h, .crosshair-v {
+    position: absolute;
+    background: rgba(168, 85, 247, 0.4);
+  }
+
+  .crosshair-h { height: 1px; left: 0; right: 0; }
+  .crosshair-v { width: 1px;  top: 0; bottom: 0; }
+
+  /* Tooltip */
+  .coord-tip {
+    position: absolute;
+    background: rgba(13,13,20,0.9);
+    border: 1px solid var(--purple);
+    border-radius: 4px;
+    padding: 3px 7px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--cyan);
+    pointer-events: none;
+    display: none;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  /* ── Side panel ──────────────────────────────────────────────── */
+  .side-panel {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .panel-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .panel-title {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  /* Color palette */
+  .palette {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+  }
+
+  .swatch {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.1s, border-color 0.1s;
+  }
+
+  .swatch:hover    { transform: scale(1.15); }
+  .swatch.selected { border-color: #fff; box-shadow: 0 0 0 1px var(--purple-hi); }
+
+  /* Selected color preview */
+  .color-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .color-swatch-lg {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .color-hex {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text);
+  }
+
+  /* Placements list */
+  .placements-list {
+    max-height: 160px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .placements-list::-webkit-scrollbar { width: 4px; }
+  .placements-list::-webkit-scrollbar-track { background: transparent; }
+  .placements-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .placement-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .placement-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .placement-undo {
+    margin-left: auto;
+    cursor: pointer;
+    color: var(--red);
+    font-size: 13px;
+    opacity: 0.6;
+    line-height: 1;
+  }
+
+  .placement-undo:hover { opacity: 1; }
+
+  .empty-placements {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    padding: 8px 0;
+  }
+
+  /* Legend */
+  .legend { display: flex; flex-direction: column; gap: 6px; }
+
+  .legend-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── Buttons ─────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    border: none;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    font-family: var(--font-sans);
+    letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--purple), var(--purple-hi));
+    color: #fff;
+    box-shadow: 0 0 20px rgba(123,47,190,0.4);
+  }
+
+  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-ghost:hover:not(:disabled) { border-color: var(--purple); color: var(--text); }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid rgba(239,68,68,0.3);
+    color: var(--red);
+  }
+
+  .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .action-row .btn { flex: 1; min-width: 100px; }
+
+  /* ── Status messages ─────────────────────────────────────────── */
+  .status-msg {
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-msg.show { display: flex; }
+  .status-msg.info    { background: rgba(34,211,238,0.08);  border: 1px solid rgba(34,211,238,0.2);  color: var(--cyan); }
+  .status-msg.success { background: rgba(34,197,94,0.08);   border: 1px solid rgba(34,197,94,0.2);   color: var(--green); }
+  .status-msg.error   { background: rgba(239,68,68,0.08);   border: 1px solid rgba(239,68,68,0.2);   color: var(--red); }
+  .status-msg.warn    { background: rgba(251,191,36,0.08);  border: 1px solid rgba(251,191,36,0.2);  color: #fbbf24; }
+
+  /* ── Loading screen ──────────────────────────────────────────── */
+  #loadScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--purple-hi);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .load-text {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── Submitted overlay ───────────────────────────────────────── */
+  #doneScreen {
+    position: fixed;
+    inset: 0;
+    background: rgba(13,13,20,0.95);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .done-icon {
+    font-size: 56px;
+    animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+  .done-title {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--green);
+  }
+
+  .done-sub {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 360px;
+    line-height: 1.6;
+  }
+
+  /* ── Responsive ──────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .side-panel { width: 100%; }
+    .canvas-wrap { flex-direction: column; }
+    .timer-bar { display: none; }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loadScreen">
+  <div class="spinner"></div>
+  <div class="load-text" id="loadText">Loading session…</div>
+</div>
+
+<!-- Done screen -->
+<div id="doneScreen">
+  <div class="done-icon">✅</div>
+  <div class="done-title">Pixels saved!</div>
+  <div class="done-sub">Head back to Discord and hit <strong>Submit Pixels</strong> to place them on the canvas.</div>
+</div>
+
+<div class="page">
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <div class="logo-text">DDAO <span>Pixel Canvas</span></div>
+    </div>
+  </header>
+
+  <!-- Session stats bar -->
+  <div class="session-bar">
+    <div class="stat">
+      <div class="stat-label">Pixels Left</div>
+      <div class="stat-value purple" id="creditsLeft">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-label">Placed</div>
+      <div class="stat-value cyan" id="placedCount">0</div>
+    </div>
+    <div class="divider"></div>
+    <div class="stat">
+      <div class="stat-label">Canvas</div>
+      <div class="stat-value" id="canvasSize">—</div>
+    </div>
+    <div class="timer-bar">
+      <span>Session expires in</span>
+      <span class="timer-val" id="timerVal">—</span>
+    </div>
+  </div>
+
+  <!-- Status message -->
+  <div class="status-msg info" id="statusMsg">
+    <span id="statusText"></span>
+  </div>
+
+  <!-- Canvas + side panel -->
+  <div class="canvas-wrap">
+
+    <!-- Canvas -->
+    <div class="canvas-container" id="canvasContainer">
+      <canvas id="pixelCanvas"></canvas>
+      <div class="crosshair" id="crosshair">
+        <div class="crosshair-h" id="crossH"></div>
+        <div class="crosshair-v" id="crossV"></div>
+      </div>
+      <div class="coord-tip" id="coordTip"></div>
+    </div>
+
+    <!-- Side panel -->
+    <div class="side-panel">
+
+      <!-- Color picker -->
+      <div class="panel-card">
+        <div class="panel-title">Color</div>
+        <div class="palette" id="palette"></div>
+        <div class="color-preview">
+          <div class="color-swatch-lg" id="colorPreviewSwatch"></div>
+          <div class="color-hex" id="colorPreviewHex">#000000</div>
+        </div>
+      </div>
+
+      <!-- Placements -->
+      <div class="panel-card">
+        <div class="panel-title">Your placements</div>
+        <div class="placements-list" id="placementsList">
+          <div class="empty-placements">Click pixels on the canvas to place them.</div>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="panel-card">
+        <div class="panel-title">Legend</div>
+        <div class="legend">
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#FFFFFF;border:1px solid #333;"></div>
+            Empty pixel
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:rgba(100,180,255,0.5);border:1px solid rgba(100,180,255,0.6);"></div>
+            Protected (1 hr cooldown)
+          </div>
+          <div class="legend-row">
+            <div class="legend-dot" style="background:#a855f7;"></div>
+            Your placement (unsaved)
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="panel-card">
+        <div class="action-row">
+          <button class="btn btn-primary" id="btnDone" disabled>Save & Return</button>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-ghost" id="btnUndo" disabled>Undo last</button>
+          <button class="btn btn-danger" id="btnClear" disabled>Clear all</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Palette ────────────────────────────────────────────────────────────────────
+const PALETTE = [
+  '#000000','#FFFFFF','#FF0000','#00FF00','#0000FF','#FFFF00',
+  '#FF00FF','#00FFFF','#FF8800','#8800FF','#FF0088','#00FF88',
+  '#884400','#004488','#448800','#FF4444',
+  '#44FF44','#4444FF','#FFAA44','#AA44FF',
+  '#FF44AA','#44FFAA','#AAAAAA','#555555',
+  '#FFD700','#C0C0C0','#8B4513','#228B22',
+  '#4169E1','#DC143C','#FF69B4','#20B2AA',
+  '#FF6347','#7FFFD4','#DDA0DD','#F0E68C',
+];
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let SESSION    = null;   // pixel-session.json content
+let CANVAS_STATE = {};   // { "x,y": { color, protectedUntil } }
+let placements = [];     // [{ x, y, color }]
+let selectedColor = PALETTE[0];
+let credits    = 0;
+let gistId     = null;
+let expiresAt  = null;
+
+const PIXEL_SIZE = 10; // canvas render px per grid pixel (scaled up)
+let   W = 64, H = 64;
+
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const canvas     = document.getElementById('pixelCanvas');
+const ctx        = canvas.getContext('2d');
+const container  = document.getElementById('canvasContainer');
+const loadScreen = document.getElementById('loadScreen');
+const loadText   = document.getElementById('loadText');
+const doneScreen = document.getElementById('doneScreen');
+const creditsEl  = document.getElementById('creditsLeft');
+const placedEl   = document.getElementById('placedCount');
+const sizeEl     = document.getElementById('canvasSize');
+const timerEl    = document.getElementById('timerVal');
+const statusMsg  = document.getElementById('statusMsg');
+const statusText = document.getElementById('statusText');
+const paletteEl  = document.getElementById('palette');
+const colorSwatch = document.getElementById('colorPreviewSwatch');
+const colorHex    = document.getElementById('colorPreviewHex');
+const listEl      = document.getElementById('placementsList');
+const btnDone     = document.getElementById('btnDone');
+const btnUndo     = document.getElementById('btnUndo');
+const btnClear    = document.getElementById('btnClear');
+const crosshair   = document.getElementById('crosshair');
+const crossH      = document.getElementById('crossH');
+const crossV      = document.getElementById('crossV');
+const coordTip    = document.getElementById('coordTip');
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+(async () => {
+  const params = new URLSearchParams(location.search);
+  gistId = params.get('gist');
+
+  if (!gistId) {
+    showError('No session found. Return to Discord and use /pixel-place to get a fresh link.');
+    hideLoader();
+    return;
+  }
+
+  try {
+    setLoadText('Reading your session…');
+    SESSION = await fetchGist(gistId, 'pixel-session.json');
+
+    if (SESSION.status !== 'active') {
+      showError('This session has already been submitted or expired. Use /pixel-place in Discord for a new one.');
+      hideLoader();
+      return;
+    }
+
+    credits   = SESSION.credits;
+    expiresAt = SESSION.expiresAt;
+    W         = SESSION.canvasWidth  || 64;
+    H         = SESSION.canvasHeight || 64;
+
+    setLoadText('Loading canvas…');
+    const stateRaw = await fetchGist(SESSION.canvasStateGist, 'canvas-state.json');
+    CANVAS_STATE   = stateRaw.pixels || {};
+
+    buildPalette();
+    initCanvas();
+    drawCanvas();
+    updateUI();
+    startTimer();
+    hideLoader();
+
+    showStatus('info', `Session ready — ${credits} pixel${credits !== 1 ? 's' : ''} to place. Click the canvas to paint!`);
+
+  } catch (err) {
+    console.error(err);
+    showError('Failed to load session: ' + err.message);
+    hideLoader();
+  }
+})();
+
+// ── Gist fetch ─────────────────────────────────────────────────────────────────
+async function fetchGist(id, filename) {
+  const res = await fetch(`https://api.github.com/gists/${id}`, {
+    headers: { 'Accept': 'application/vnd.github+json' }
+  });
+  if (!res.ok) throw new Error(`Gist fetch failed (${res.status})`);
+  const data = await res.json();
+  const content = data.files?.[filename]?.content;
+  if (!content) throw new Error(`File ${filename} not found in Gist`);
+  return JSON.parse(content);
+}
+
+async function patchGist(id, filename, content) {
+  const GITHUB_TOKEN = ''; // ← LEAVE BLANK — bot creates the Gist with its own token,
+                           //   canvas page patches via the PUBLIC gist ID (no auth needed
+                           //   for gists the bot owns when using secret gist trick).
+                           //   If you want extra security, put a read/write token here.
+  const headers = {
+    'Content-Type':  'application/json',
+    'Accept':        'application/vnd.github+json',
+  };
+  if (GITHUB_TOKEN) headers['Authorization'] = `Bearer ${GITHUB_TOKEN}`;
+
+  const res = await fetch(`https://api.github.com/gists/${id}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({
+      files: { [filename]: { content: JSON.stringify(content) } }
+    })
+  });
+  if (!res.ok) throw new Error(`Gist patch failed (${res.status})`);
+  return res.json();
+}
+
+// ── Canvas setup ───────────────────────────────────────────────────────────────
+function initCanvas() {
+  canvas.width  = W * PIXEL_SIZE;
+  canvas.height = H * PIXEL_SIZE;
+  sizeEl.textContent = `${W}×${H}`;
+}
+
+function drawCanvas() {
+  const now = Date.now();
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) {
+      const key     = `${x},${y}`;
+      const pixel   = CANVAS_STATE[key];
+      const pending = placements.find(p => p.x === x && p.y === y);
+
+      // Base color
+      ctx.fillStyle = pending
+        ? pending.color
+        : (pixel?.color || '#FFFFFF');
+      ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+
+      // Protection overlay
+      const isProtected = pixel && pixel.protectedUntil > now && !pending;
+      if (isProtected) {
+        ctx.fillStyle = 'rgba(100,180,255,0.35)';
+        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      }
+
+      // Pending outline
+      if (pending) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth   = 1;
+        ctx.strokeRect(x * PIXEL_SIZE + 0.5, y * PIXEL_SIZE + 0.5, PIXEL_SIZE - 1, PIXEL_SIZE - 1);
+      }
+    }
+  }
+
+  // Grid lines (subtle)
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  ctx.lineWidth   = 0.5;
+  for (let x = 0; x <= W; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * PIXEL_SIZE, 0);
+    ctx.lineTo(x * PIXEL_SIZE, H * PIXEL_SIZE);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= H; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * PIXEL_SIZE);
+    ctx.lineTo(W * PIXEL_SIZE, y * PIXEL_SIZE);
+    ctx.stroke();
+  }
+}
+
+// ── Canvas interaction ─────────────────────────────────────────────────────────
+function getPixelCoords(e) {
+  const rect  = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const px    = (e.clientX - rect.left) * scaleX;
+  const py    = (e.clientY - rect.top)  * scaleY;
+  return {
+    x: Math.floor(px / PIXEL_SIZE),
+    y: Math.floor(py / PIXEL_SIZE),
+  };
+}
+
+canvas.addEventListener('click', (e) => {
+  if (!SESSION) return;
+  const { x, y } = getPixelCoords(e);
+  if (x < 0 || x >= W || y < 0 || y >= H) return;
+
+  const key       = `${x},${y}`;
+  const pixel     = CANVAS_STATE[key];
+  const alreadyPending = placements.findIndex(p => p.x === x && p.y === y);
+
+  // If clicking an existing pending pixel — replace its color
+  if (alreadyPending !== -1) {
+    placements[alreadyPending].color = selectedColor;
+    drawCanvas();
+    updateUI();
+    updatePlacementsList();
+    return;
+  }
+
+  // Check protection
+  if (pixel?.protectedUntil > Date.now()) {
+    const remaining = Math.ceil((pixel.protectedUntil - Date.now()) / 60000);
+    showStatus('warn', `That pixel is protected for ~${remaining} more minute${remaining !== 1 ? 's' : ''}. Pick a different spot!`);
+    return;
+  }
+
+  // Check credits
+  const creditsUsed = placements.length + (SESSION.hasFreePixel ? 0 : 0);
+  if (placements.length >= credits) {
+    showStatus('warn', `You've used all ${credits} pixel${credits !== 1 ? 's' : ''}. Undo one or hit Save & Return.`);
+    return;
+  }
+
+  placements.push({ x, y, color: selectedColor });
+  drawCanvas();
+  updateUI();
+  updatePlacementsList();
+  clearStatus();
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  const rect    = canvas.getBoundingClientRect();
+  const { x, y } = getPixelCoords(e);
+
+  if (x < 0 || x >= W || y < 0 || y >= H) {
+    crosshair.style.display = 'none';
+    coordTip.style.display  = 'none';
+    return;
+  }
+
+  // Crosshair
+  crosshair.style.display = 'block';
+  const px = (x * PIXEL_SIZE) * (rect.width  / canvas.width);
+  const py = (y * PIXEL_SIZE) * (rect.height / canvas.height);
+  const ps = PIXEL_SIZE * (rect.width / canvas.width);
+
+  crossH.style.top    = `${py + ps / 2}px`;
+  crossV.style.left   = `${px + ps / 2}px`;
+
+  // Coord tip
+  coordTip.style.display = 'block';
+  coordTip.textContent   = `(${x}, ${y})`;
+  const tipX = Math.min(e.clientX - rect.left + 12, rect.width  - 80);
+  const tipY = Math.max(e.clientY - rect.top  - 28, 4);
+  coordTip.style.left = `${tipX}px`;
+  coordTip.style.top  = `${tipY}px`;
+});
+
+canvas.addEventListener('mouseleave', () => {
+  crosshair.style.display = 'none';
+  coordTip.style.display  = 'none';
+});
+
+// ── Palette ────────────────────────────────────────────────────────────────────
+function buildPalette() {
+  paletteEl.innerHTML = '';
+  PALETTE.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.className = 'swatch' + (hex === selectedColor ? ' selected' : '');
+    sw.style.background = hex;
+    sw.title = hex;
+    sw.addEventListener('click', () => {
+      selectedColor = hex;
+      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+      colorSwatch.style.background = hex;
+      colorHex.textContent = hex;
+    });
+    paletteEl.appendChild(sw);
+  });
+  colorSwatch.style.background = selectedColor;
+  colorHex.textContent = selectedColor;
+}
+
+// ── UI updates ─────────────────────────────────────────────────────────────────
+function updateUI() {
+  const remaining = credits - placements.length;
+  creditsEl.textContent = remaining;
+  placedEl.textContent  = placements.length;
+  btnDone.disabled  = placements.length === 0;
+  btnUndo.disabled  = placements.length === 0;
+  btnClear.disabled = placements.length === 0;
+}
+
+function updatePlacementsList() {
+  if (placements.length === 0) {
+    listEl.innerHTML = '<div class="empty-placements">Click pixels on the canvas to place them.</div>';
+    return;
+  }
+  listEl.innerHTML = '';
+  [...placements].reverse().forEach((p, ri) => {
+    const i   = placements.length - 1 - ri;
+    const row = document.createElement('div');
+    row.className = 'placement-row';
+    row.innerHTML = `
+      <div class="placement-dot" style="background:${p.color};"></div>
+      <span>(${p.x}, ${p.y})</span>
+      <span style="color:var(--muted);font-size:10px;">${p.color}</span>
+      <span class="placement-undo" title="Remove" data-idx="${i}">✕</span>
+    `;
+    listEl.appendChild(row);
+  });
+
+  listEl.querySelectorAll('.placement-undo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.idx);
+      placements.splice(idx, 1);
+      drawCanvas();
+      updateUI();
+      updatePlacementsList();
+    });
+  });
+}
+
+// ── Timer ──────────────────────────────────────────────────────────────────────
+function startTimer() {
+  function tick() {
+    const ms      = expiresAt - Date.now();
+    if (ms <= 0) {
+      timerEl.textContent = 'Expired';
+      timerEl.classList.add('urgent');
+      showStatus('error', 'Session expired. Your pixel balance is unchanged — go back to Discord and use /pixel-place for a new session.');
+      btnDone.disabled = true;
+      return;
+    }
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    timerEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+    timerEl.classList.toggle('urgent', m < 5);
+    setTimeout(tick, 1000);
+  }
+  tick();
+}
+
+// ── Buttons ────────────────────────────────────────────────────────────────────
+btnUndo.addEventListener('click', () => {
+  if (placements.length === 0) return;
+  placements.pop();
+  drawCanvas();
+  updateUI();
+  updatePlacementsList();
+});
+
+btnClear.addEventListener('click', () => {
+  placements = [];
+  drawCanvas();
+  updateUI();
+  updatePlacementsList();
+});
+
+btnDone.addEventListener('click', async () => {
+  if (placements.length === 0) return;
+
+  btnDone.disabled = true;
+  btnDone.textContent = 'Saving…';
+
+  try {
+    // Patch the session Gist with placements
+    const updated = { ...SESSION, placements, status: 'submitted' };
+    await patchGist(gistId, 'pixel-session.json', updated);
+
+    // Show done screen
+    doneScreen.style.display = 'flex';
+  } catch (err) {
+    console.error(err);
+    showStatus('error', 'Failed to save placements: ' + err.message + '. Please try again.');
+    btnDone.disabled = false;
+    btnDone.textContent = 'Save & Return';
+  }
+});
+
+// ── Status helpers ─────────────────────────────────────────────────────────────
+function showStatus(type, msg) {
+  statusMsg.className = `status-msg ${type} show`;
+  statusText.textContent = msg;
+}
+
+function showError(msg) { showStatus('error', msg); }
+function clearStatus()  { statusMsg.className = 'status-msg'; }
+
+// ── Loader ─────────────────────────────────────────────────────────────────────
+function setLoadText(t) { loadText.textContent = t; }
+function hideLoader()   { loadScreen.style.display = 'none'; }
+</script>
+</body>
+</html>
