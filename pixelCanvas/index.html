@@ -715,10 +715,7 @@ async function fetchGist(id, filename) {
 }
 
 async function patchGist(id, filename, content) {
-  const GITHUB_TOKEN = ''; // ← LEAVE BLANK — bot creates the Gist with its own token,
-                           //   canvas page patches via the PUBLIC gist ID (no auth needed
-                           //   for gists the bot owns when using secret gist trick).
-                           //   If you want extra security, put a read/write token here.
+  const GITHUB_TOKEN = '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';
   const headers = {
     'Content-Type':  'application/json',
     'Accept':        'application/vnd.github+json',
