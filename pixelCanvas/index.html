@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>DDAO Pixel Canvas</title>
 <style>
-  /* ── Tokens ──────────────────────────────────────────────────── */
   :root {
     --bg:        #0d0d14;
     --surface:   #14141f;
+    --surface2:  #1a1a28;
     --border:    #1e1e30;
     --purple:    #7b2fbe;
     --purple-lo: #3d1760;
@@ -18,69 +18,50 @@
     --muted:     #6b6b8a;
     --red:       #ef4444;
     --green:     #22c55e;
-    --protected: rgba(100,180,255,0.35);
-    --radius:    6px;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-    --font-sans: 'Inter', system-ui, sans-serif;
+    --orange:    #f97316;
+    --radius:    8px;
+    --mono:      'JetBrains Mono', 'Fira Code', monospace;
+    --sans:      'Inter', system-ui, sans-serif;
+    --bar-h:     64px; /* bottom bar height */
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  body {
+  html, body {
+    height: 100%;
+    overflow: hidden;
     background: var(--bg);
     color: var(--text);
-    font-family: var(--font-sans);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    font-family: var(--sans);
+    touch-action: none;
   }
 
-  /* ── Ambient grid background ─────────────────────────────────── */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.4;
-    pointer-events: none;
-    z-index: 0;
+  /* ── Layout: full viewport split into header / canvas / bottom bar ── */
+  .layout {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    width: 100vw;
   }
 
-  /* ── Layout ──────────────────────────────────────────────────── */
-  .page {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    max-width: 1100px;
-    padding: 24px 16px 48px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .logo {
+  /* ── Header ──────────────────────────────────────────────────────── */
+  .header {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    z-index: 10;
+    flex-wrap: wrap;
   }
 
   .logo-dot {
-    width: 10px; height: 10px;
+    width: 8px; height: 8px;
     border-radius: 50%;
     background: var(--purple-hi);
-    box-shadow: 0 0 12px var(--purple-hi);
+    box-shadow: 0 0 10px var(--purple-hi);
+    flex-shrink: 0;
     animation: pulse 2s ease-in-out infinite;
   }
 
@@ -90,163 +71,144 @@
   }
 
   .logo-text {
-    font-family: var(--font-mono);
-    font-size: 13px;
-    letter-spacing: 0.15em;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
     color: var(--muted);
     text-transform: uppercase;
+    flex-shrink: 0;
   }
 
   .logo-text span { color: var(--purple-hi); }
 
-  /* ── Session bar ─────────────────────────────────────────────── */
-  .session-bar {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 12px 16px;
+  .header-stats {
     display: flex;
     align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
-  .stat {
+  .hstat {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    align-items: flex-end;
+    gap: 1px;
   }
 
-  .stat-label {
-    font-size: 10px;
-    letter-spacing: 0.1em;
+  .hstat-label {
+    font-size: 9px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--muted);
-    font-family: var(--font-mono);
+    font-family: var(--mono);
   }
 
-  .stat-value {
-    font-size: 18px;
+  .hstat-value {
+    font-size: 14px;
     font-weight: 700;
+    font-family: var(--mono);
     color: var(--text);
-    font-family: var(--font-mono);
+    line-height: 1;
   }
 
-  .stat-value.purple { color: var(--purple-hi); }
-  .stat-value.cyan   { color: var(--cyan); }
-  .stat-value.green  { color: var(--green); }
+  .hstat-value.purple { color: var(--purple-hi); }
+  .hstat-value.cyan   { color: var(--cyan); }
+  .hstat-value.orange { color: var(--orange); }
 
-  .divider { width: 1px; height: 36px; background: var(--border); flex-shrink: 0; }
-
-  .timer-bar {
-    margin-left: auto;
+  /* ── Canvas area ─────────────────────────────────────────────────── */
+  .canvas-area {
+    position: relative;
+    overflow: hidden;
+    background: #111118;
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    color: var(--muted);
-  }
-
-  .timer-val { color: var(--cyan); font-size: 14px; font-weight: 600; }
-  .timer-val.urgent { color: var(--red); animation: blink 1s step-end infinite; }
-  @keyframes blink { 50% { opacity: 0.4; } }
-
-  /* ── Main canvas area ────────────────────────────────────────── */
-  .canvas-wrap {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .canvas-container {
-    position: relative;
-    flex: 1 1 500px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    cursor: crosshair;
+    justify-content: center;
   }
 
   #pixelCanvas {
-    display: block;
-    width: 100%;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
+    cursor: crosshair;
+    /* Pan & zoom handled via transform */
+    transform-origin: center center;
+    transition: none;
   }
 
-  /* Crosshair overlay */
-  .crosshair {
+  /* Floating controls top-left */
+  .float-controls {
     position: absolute;
-    pointer-events: none;
-    display: none;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 20;
   }
 
-  .crosshair-h, .crosshair-v {
-    position: absolute;
-    background: rgba(168, 85, 247, 0.4);
+  .float-btn {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(20,20,31,0.85);
+    backdrop-filter: blur(8px);
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
   }
 
-  .crosshair-h { height: 1px; left: 0; right: 0; }
-  .crosshair-v { width: 1px;  top: 0; bottom: 0; }
+  .float-btn:hover { border-color: var(--purple); background: rgba(123,47,190,0.2); }
+  .float-btn:active { transform: scale(0.93); }
 
-  /* Tooltip */
+  /* Coord tooltip */
   .coord-tip {
     position: absolute;
-    background: rgba(13,13,20,0.9);
+    top: 12px;
+    right: 12px;
+    background: rgba(13,13,20,0.88);
     border: 1px solid var(--purple);
-    border-radius: 4px;
-    padding: 3px 7px;
-    font-family: var(--font-mono);
-    font-size: 11px;
+    border-radius: 5px;
+    padding: 4px 9px;
+    font-family: var(--mono);
+    font-size: 12px;
     color: var(--cyan);
     pointer-events: none;
     display: none;
-    white-space: nowrap;
-    z-index: 10;
+    z-index: 20;
   }
 
-  /* ── Side panel ──────────────────────────────────────────────── */
-  .side-panel {
-    width: 220px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .panel-card {
-    background: var(--surface);
+  /* ── Floating color picker ────────────────────────────────────────── */
+  .color-panel {
+    position: absolute;
+    bottom: calc(var(--bar-h) + 12px);
+    left: 12px;
+    background: rgba(20,20,31,0.95);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 14px;
-    display: flex;
+    padding: 10px;
+    display: none;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    z-index: 30;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   }
 
-  .panel-title {
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-family: var(--font-mono);
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-  }
+  .color-panel.open { display: flex; }
 
-  /* Color palette */
   .palette {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 5px;
+    grid-template-columns: repeat(6, 26px);
+    gap: 4px;
   }
 
   .swatch {
-    aspect-ratio: 1;
-    border-radius: 3px;
+    width: 26px; height: 26px;
+    border-radius: 4px;
     cursor: pointer;
     border: 2px solid transparent;
     transition: transform 0.1s, border-color 0.1s;
@@ -255,45 +217,73 @@
   .swatch:hover    { transform: scale(1.15); }
   .swatch.selected { border-color: #fff; box-shadow: 0 0 0 1px var(--purple-hi); }
 
-  /* Selected color preview */
   .color-preview {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid var(--border);
   }
 
   .color-swatch-lg {
-    width: 28px; height: 28px;
+    width: 24px; height: 24px;
     border-radius: 4px;
     border: 1px solid var(--border);
     flex-shrink: 0;
   }
 
   .color-hex {
-    font-family: var(--font-mono);
-    font-size: 13px;
+    font-family: var(--mono);
+    font-size: 12px;
     color: var(--text);
   }
 
-  /* Placements list */
-  .placements-list {
-    max-height: 160px;
-    overflow-y: auto;
-    display: flex;
+  /* ── Placements panel ────────────────────────────────────────────── */
+  .placements-panel {
+    position: absolute;
+    bottom: calc(var(--bar-h) + 12px);
+    right: 12px;
+    width: 200px;
+    background: rgba(20,20,31,0.95);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px;
+    display: none;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
+    z-index: 30;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    max-height: 280px;
   }
 
-  .placements-list::-webkit-scrollbar { width: 4px; }
-  .placements-list::-webkit-scrollbar-track { background: transparent; }
+  .placements-panel.open { display: flex; }
+
+  .panel-title {
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .placements-list {
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .placements-list::-webkit-scrollbar { width: 3px; }
   .placements-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .placement-row {
     display: flex;
     align-items: center;
     gap: 6px;
-    font-family: var(--font-mono);
-    font-size: 11px;
+    font-family: var(--mono);
+    font-size: 10px;
     color: var(--muted);
     padding: 3px 0;
     border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -309,113 +299,180 @@
     margin-left: auto;
     cursor: pointer;
     color: var(--red);
-    font-size: 13px;
-    opacity: 0.6;
-    line-height: 1;
+    font-size: 12px;
+    opacity: 0.5;
   }
 
   .placement-undo:hover { opacity: 1; }
 
-  .empty-placements {
-    font-size: 11px;
+  .empty-list {
+    font-size: 10px;
     color: var(--muted);
     font-style: italic;
     text-align: center;
     padding: 8px 0;
   }
 
-  /* Legend */
-  .legend { display: flex; flex-direction: column; gap: 6px; }
-
-  .legend-row {
+  /* ── Bottom bar — ALWAYS VISIBLE, cannot be missed ───────────────── */
+  .bottom-bar {
+    height: var(--bar-h);
+    background: var(--surface);
+    border-top: 1px solid var(--border);
     display: flex;
     align-items: center;
-    gap: 7px;
-    font-size: 11px;
-    color: var(--muted);
-  }
-
-  .legend-dot {
-    width: 12px; height: 12px;
-    border-radius: 2px;
+    gap: 8px;
+    padding: 0 12px;
+    z-index: 10;
     flex-shrink: 0;
   }
 
-  /* ── Buttons ─────────────────────────────────────────────────── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 18px;
-    border-radius: var(--radius);
-    border: none;
-    font-size: 13px;
-    font-weight: 600;
+  /* Color button shows current color */
+  .color-toggle {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    border: 2px solid var(--border);
     cursor: pointer;
-    transition: opacity 0.15s, transform 0.1s;
-    font-family: var(--font-sans);
-    letter-spacing: 0.02em;
-    text-decoration: none;
+    flex-shrink: 0;
+    transition: border-color 0.15s;
+    position: relative;
   }
 
-  .btn:active { transform: scale(0.97); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .color-toggle:hover { border-color: var(--purple-hi); }
 
-  .btn-primary {
-    background: linear-gradient(135deg, var(--purple), var(--purple-hi));
-    color: #fff;
-    box-shadow: 0 0 20px rgba(123,47,190,0.4);
+  .color-toggle-label {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 8px;
+    color: var(--muted);
+    font-family: var(--mono);
+    white-space: nowrap;
+    letter-spacing: 0.05em;
   }
 
-  .btn-primary:hover:not(:disabled) { opacity: 0.88; }
+  /* Divider */
+  .bar-div {
+    width: 1px;
+    height: 32px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
 
-  .btn-ghost {
+  /* Undo / list buttons */
+  .bar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
     background: transparent;
     border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 6px 10px;
+    font-size: 16px;
+    transition: border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+
+  .bar-btn:hover { border-color: var(--purple); color: var(--text); }
+  .bar-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .bar-btn-label {
+    font-size: 8px;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  /* Save button — big, green, right side, impossible to miss */
+  .save-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #16a34a, var(--green));
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--sans);
+    cursor: pointer;
+    padding: 0 20px;
+    height: 44px;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(34,197,94,0.35);
+    transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+    letter-spacing: 0.02em;
+  }
+
+  .save-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    box-shadow: 0 0 28px rgba(34,197,94,0.55);
+  }
+
+  .save-btn:active:not(:disabled) { transform: scale(0.97); }
+
+  .save-btn:disabled {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    box-shadow: none;
+    cursor: not-allowed;
+  }
+
+  .save-badge {
+    background: rgba(255,255,255,0.25);
+    border-radius: 12px;
+    padding: 1px 7px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .save-btn:disabled .save-badge {
+    background: var(--border);
     color: var(--muted);
   }
 
-  .btn-ghost:hover:not(:disabled) { border-color: var(--purple); color: var(--text); }
-
-  .btn-danger {
-    background: transparent;
-    border: 1px solid rgba(239,68,68,0.3);
-    color: var(--red);
-  }
-
-  .btn-danger:hover:not(:disabled) { background: rgba(239,68,68,0.1); }
-
-  .action-row {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .action-row .btn { flex: 1; min-width: 100px; }
-
-  /* ── Status messages ─────────────────────────────────────────── */
-  .status-msg {
-    padding: 10px 14px;
-    border-radius: var(--radius);
+  /* ── Status toast ────────────────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: calc(var(--bar-h) + 16px);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(20,20,31,0.96);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 8px 16px;
     font-size: 13px;
-    display: none;
-    align-items: center;
-    gap: 8px;
+    color: var(--text);
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 90vw;
+    text-align: center;
   }
 
-  .status-msg.show { display: flex; }
-  .status-msg.info    { background: rgba(34,211,238,0.08);  border: 1px solid rgba(34,211,238,0.2);  color: var(--cyan); }
-  .status-msg.success { background: rgba(34,197,94,0.08);   border: 1px solid rgba(34,197,94,0.2);   color: var(--green); }
-  .status-msg.error   { background: rgba(239,68,68,0.08);   border: 1px solid rgba(239,68,68,0.2);   color: var(--red); }
-  .status-msg.warn    { background: rgba(251,191,36,0.08);  border: 1px solid rgba(251,191,36,0.2);  color: #fbbf24; }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 
-  /* ── Loading screen ──────────────────────────────────────────── */
+  .toast.warn  { border-color: var(--orange); color: var(--orange); }
+  .toast.error { border-color: var(--red);    color: var(--red); }
+  .toast.ok    { border-color: var(--green);  color: var(--green); }
+
+  /* ── Loading ─────────────────────────────────────────────────────── */
   #loadScreen {
     position: fixed;
     inset: 0;
     background: var(--bg);
-    z-index: 100;
+    z-index: 200;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -434,18 +491,18 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .load-text {
-    font-family: var(--font-mono);
+    font-family: var(--mono);
     font-size: 13px;
     color: var(--muted);
     letter-spacing: 0.1em;
   }
 
-  /* ── Submitted overlay ───────────────────────────────────────── */
+  /* ── Done screen ─────────────────────────────────────────────────── */
   #doneScreen {
     position: fixed;
     inset: 0;
-    background: rgba(13,13,20,0.95);
-    z-index: 100;
+    background: rgba(13,13,20,0.97);
+    z-index: 200;
     display: none;
     flex-direction: column;
     align-items: center;
@@ -456,154 +513,149 @@
   }
 
   .done-icon {
-    font-size: 56px;
+    font-size: 60px;
     animation: pop 0.4s cubic-bezier(0.34,1.56,0.64,1);
   }
 
-  @keyframes pop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-  .done-title {
-    font-size: 26px;
-    font-weight: 700;
-    color: var(--green);
+  @keyframes pop {
+    from { transform: scale(0); opacity: 0; }
+    to   { transform: scale(1); opacity: 1; }
   }
+
+  .done-title { font-size: 26px; font-weight: 700; color: var(--green); }
 
   .done-sub {
     font-size: 15px;
     color: var(--muted);
-    max-width: 360px;
-    line-height: 1.6;
+    max-width: 340px;
+    line-height: 1.7;
   }
 
-  /* ── Responsive ──────────────────────────────────────────────── */
-  @media (max-width: 640px) {
-    .side-panel { width: 100%; }
-    .canvas-wrap { flex-direction: column; }
-    .timer-bar { display: none; }
+  .done-sub strong { color: var(--text); }
+
+  /* ── Timer pill ──────────────────────────────────────────────────── */
+  .timer-pill {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    flex-shrink: 0;
   }
+
+  .timer-val { color: var(--cyan); font-weight: 600; }
+  .timer-val.urgent { color: var(--red); animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0.3; } }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<!-- Loading screen -->
+<!-- Loading -->
 <div id="loadScreen">
   <div class="spinner"></div>
   <div class="load-text" id="loadText">Loading session…</div>
 </div>
 
-<!-- Done screen -->
+<!-- Done -->
 <div id="doneScreen">
   <div class="done-icon">✅</div>
   <div class="done-title">Pixels saved!</div>
   <div class="done-sub">Head back to Discord and hit <strong>Submit Pixels</strong> to place them on the canvas.</div>
 </div>
 
-<div class="page">
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Main layout -->
+<div class="layout">
 
   <!-- Header -->
-  <header>
-    <div class="logo">
-      <div class="logo-dot"></div>
-      <div class="logo-text">DDAO <span>Pixel Canvas</span></div>
-    </div>
-  </header>
-
-  <!-- Session stats bar -->
-  <div class="session-bar">
-    <div class="stat">
-      <div class="stat-label">Pixels Left</div>
-      <div class="stat-value purple" id="creditsLeft">—</div>
-    </div>
-    <div class="divider"></div>
-    <div class="stat">
-      <div class="stat-label">Placed</div>
-      <div class="stat-value cyan" id="placedCount">0</div>
-    </div>
-    <div class="divider"></div>
-    <div class="stat">
-      <div class="stat-label">Canvas</div>
-      <div class="stat-value" id="canvasSize">—</div>
-    </div>
-    <div class="timer-bar">
-      <span>Session expires in</span>
-      <span class="timer-val" id="timerVal">—</span>
+  <div class="header">
+    <div class="logo-dot"></div>
+    <div class="logo-text">DDAO <span>Canvas</span></div>
+    <div class="header-stats">
+      <div class="hstat">
+        <div class="hstat-label">Credits</div>
+        <div class="hstat-value purple" id="creditsLeft">—</div>
+      </div>
+      <div class="hstat">
+        <div class="hstat-label">Placed</div>
+        <div class="hstat-value cyan" id="placedCount">0</div>
+      </div>
+      <div class="timer-pill">
+        ⏱ <span class="timer-val" id="timerVal">—</span>
+      </div>
     </div>
   </div>
 
-  <!-- Status message -->
-  <div class="status-msg info" id="statusMsg">
-    <span id="statusText"></span>
-  </div>
+  <!-- Canvas area -->
+  <div class="canvas-area" id="canvasArea">
+    <canvas id="pixelCanvas"></canvas>
 
-  <!-- Canvas + side panel -->
-  <div class="canvas-wrap">
-
-    <!-- Canvas -->
-    <div class="canvas-container" id="canvasContainer">
-      <canvas id="pixelCanvas"></canvas>
-      <div class="crosshair" id="crosshair">
-        <div class="crosshair-h" id="crossH"></div>
-        <div class="crosshair-v" id="crossV"></div>
-      </div>
-      <div class="coord-tip" id="coordTip"></div>
+    <!-- Floating zoom controls -->
+    <div class="float-controls">
+      <button class="float-btn" id="btnZoomIn"  title="Zoom in">+</button>
+      <button class="float-btn" id="btnZoomOut" title="Zoom out">−</button>
+      <button class="float-btn" id="btnZoomReset" title="Reset view" style="font-size:13px;">⊡</button>
     </div>
 
-    <!-- Side panel -->
-    <div class="side-panel">
+    <!-- Coord tip -->
+    <div class="coord-tip" id="coordTip"></div>
 
-      <!-- Color picker -->
-      <div class="panel-card">
-        <div class="panel-title">Color</div>
-        <div class="palette" id="palette"></div>
-        <div class="color-preview">
-          <div class="color-swatch-lg" id="colorPreviewSwatch"></div>
-          <div class="color-hex" id="colorPreviewHex">#000000</div>
-        </div>
+    <!-- Floating color picker -->
+    <div class="color-panel" id="colorPanel">
+      <div class="palette" id="palette"></div>
+      <div class="color-preview">
+        <div class="color-swatch-lg" id="colorSwatchLg"></div>
+        <div class="color-hex" id="colorHex">#000000</div>
       </div>
+    </div>
 
-      <!-- Placements -->
-      <div class="panel-card">
-        <div class="panel-title">Your placements</div>
-        <div class="placements-list" id="placementsList">
-          <div class="empty-placements">Click pixels on the canvas to place them.</div>
-        </div>
+    <!-- Floating placements list -->
+    <div class="placements-panel" id="placementsPanel">
+      <div class="panel-title">Your placements</div>
+      <div class="placements-list" id="placementsList">
+        <div class="empty-list">No pixels placed yet.</div>
       </div>
-
-      <!-- Legend -->
-      <div class="panel-card">
-        <div class="panel-title">Legend</div>
-        <div class="legend">
-          <div class="legend-row">
-            <div class="legend-dot" style="background:#FFFFFF;border:1px solid #333;"></div>
-            Empty pixel
-          </div>
-          <div class="legend-row">
-            <div class="legend-dot" style="background:rgba(100,180,255,0.5);border:1px solid rgba(100,180,255,0.6);"></div>
-            Protected (1 hr cooldown)
-          </div>
-          <div class="legend-row">
-            <div class="legend-dot" style="background:#a855f7;"></div>
-            Your placement (unsaved)
-          </div>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="panel-card">
-        <div class="action-row">
-          <button class="btn btn-primary" id="btnDone" disabled>Save & Return</button>
-        </div>
-        <div class="action-row">
-          <button class="btn btn-ghost" id="btnUndo" disabled>Undo last</button>
-          <button class="btn btn-danger" id="btnClear" disabled>Clear all</button>
-        </div>
-      </div>
-
     </div>
   </div>
 
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+
+    <!-- Color toggle -->
+    <div style="position:relative;">
+      <div class="color-toggle" id="colorToggle" title="Pick color"></div>
+    </div>
+
+    <div class="bar-div"></div>
+
+    <!-- Undo -->
+    <button class="bar-btn" id="btnUndo" disabled title="Undo last pixel">
+      <span>↩</span>
+      <span class="bar-btn-label">Undo</span>
+    </button>
+
+    <!-- Placements list toggle -->
+    <button class="bar-btn" id="btnList" title="View placements">
+      <span>☰</span>
+      <span class="bar-btn-label">List</span>
+    </button>
+
+    <!-- Save — right side, always visible -->
+    <button class="save-btn" id="btnSave" disabled>
+      ✅ Save &amp; Return
+      <span class="save-badge" id="saveBadge">0</span>
+    </button>
+
+  </div>
 </div>
 
 <script>
@@ -620,41 +672,46 @@ const PALETTE = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────────
-let SESSION    = null;   // pixel-session.json content
-let CANVAS_STATE = {};   // { "x,y": { color, protectedUntil } }
-let placements = [];     // [{ x, y, color }]
+let SESSION       = null;
+let CANVAS_STATE  = {};
+let placements    = [];
 let selectedColor = PALETTE[0];
-let credits    = 0;
-let gistId     = null;
-let expiresAt  = null;
+let credits       = 0;
+let gistId        = null;
+let expiresAt     = null;
+let W = 64, H = 64;
 
-const PIXEL_SIZE = 10; // canvas render px per grid pixel (scaled up)
-let   W = 64, H = 64;
+// Pan/zoom state
+const PIXEL_SIZE  = 8;
+let scale         = 1;
+let offsetX       = 0;
+let offsetY       = 0;
+let isPanning     = false;
+let panStart      = { x: 0, y: 0 };
+let lastPinchDist = null;
 
-// ── DOM refs ───────────────────────────────────────────────────────────────────
-const canvas     = document.getElementById('pixelCanvas');
-const ctx        = canvas.getContext('2d');
-const container  = document.getElementById('canvasContainer');
-const loadScreen = document.getElementById('loadScreen');
-const loadText   = document.getElementById('loadText');
-const doneScreen = document.getElementById('doneScreen');
-const creditsEl  = document.getElementById('creditsLeft');
-const placedEl   = document.getElementById('placedCount');
-const sizeEl     = document.getElementById('canvasSize');
-const timerEl    = document.getElementById('timerVal');
-const statusMsg  = document.getElementById('statusMsg');
-const statusText = document.getElementById('statusText');
-const paletteEl  = document.getElementById('palette');
-const colorSwatch = document.getElementById('colorPreviewSwatch');
-const colorHex    = document.getElementById('colorPreviewHex');
-const listEl      = document.getElementById('placementsList');
-const btnDone     = document.getElementById('btnDone');
-const btnUndo     = document.getElementById('btnUndo');
-const btnClear    = document.getElementById('btnClear');
-const crosshair   = document.getElementById('crosshair');
-const crossH      = document.getElementById('crossH');
-const crossV      = document.getElementById('crossV');
-const coordTip    = document.getElementById('coordTip');
+// ── DOM ────────────────────────────────────────────────────────────────────────
+const canvas         = document.getElementById('pixelCanvas');
+const ctx            = canvas.getContext('2d');
+const canvasArea     = document.getElementById('canvasArea');
+const loadScreen     = document.getElementById('loadScreen');
+const doneScreen     = document.getElementById('doneScreen');
+const colorPanel     = document.getElementById('colorPanel');
+const placementsPanel = document.getElementById('placementsPanel');
+const colorToggle    = document.getElementById('colorToggle');
+const coordTip       = document.getElementById('coordTip');
+const creditsEl      = document.getElementById('creditsLeft');
+const placedEl       = document.getElementById('placedCount');
+const timerEl        = document.getElementById('timerVal');
+const saveBadge      = document.getElementById('saveBadge');
+const btnSave        = document.getElementById('btnSave');
+const btnUndo        = document.getElementById('btnUndo');
+const btnList        = document.getElementById('btnList');
+const btnZoomIn      = document.getElementById('btnZoomIn');
+const btnZoomOut     = document.getElementById('btnZoomOut');
+const btnZoomReset   = document.getElementById('btnZoomReset');
+const paletteEl      = document.getElementById('palette');
+const placementsList = document.getElementById('placementsList');
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 (async () => {
@@ -662,18 +719,20 @@ const coordTip    = document.getElementById('coordTip');
   gistId = params.get('gist');
 
   if (!gistId) {
-    showError('No session found. Return to Discord and use /pixel-place to get a fresh link.');
-    hideLoader();
+    document.getElementById('loadText').textContent = 'No session found.';
+    showToast('No session. Use /pixel-place in Discord.', 'error', 0);
+    loadScreen.style.display = 'none'; // show blank layout
     return;
   }
 
   try {
-    setLoadText('Reading your session…');
+    document.getElementById('loadText').textContent = 'Reading your session…';
     SESSION = await fetchGist(gistId, 'pixel-session.json');
 
     if (SESSION.status !== 'active') {
-      showError('This session has already been submitted or expired. Use /pixel-place in Discord for a new one.');
-      hideLoader();
+      document.getElementById('loadText').textContent = 'Session expired.';
+      showToast('Session already submitted or expired. Use /pixel-place for a new one.', 'error', 0);
+      setTimeout(() => loadScreen.style.display = 'none', 1500);
       return;
     }
 
@@ -682,7 +741,7 @@ const coordTip    = document.getElementById('coordTip');
     W         = SESSION.canvasWidth  || 64;
     H         = SESSION.canvasHeight || 64;
 
-    setLoadText('Loading canvas…');
+    document.getElementById('loadText').textContent = 'Loading canvas…';
     const stateRaw = await fetchGist(SESSION.canvasStateGist, 'canvas-state.json');
     CANVAS_STATE   = stateRaw.pixels || {};
 
@@ -691,49 +750,70 @@ const coordTip    = document.getElementById('coordTip');
     drawCanvas();
     updateUI();
     startTimer();
-    hideLoader();
+    loadScreen.style.display = 'none';
 
-    showStatus('info', `Session ready — ${credits} pixel${credits !== 1 ? 's' : ''} to place. Click the canvas to paint!`);
-
+    showToast(`${credits} pixel${credits !== 1 ? 's' : ''} to place — tap the canvas!`, 'ok');
   } catch (err) {
     console.error(err);
-    showError('Failed to load session: ' + err.message);
-    hideLoader();
+    document.getElementById('loadText').textContent = 'Failed to load.';
+    showToast('Failed to load session: ' + err.message, 'error', 0);
+    setTimeout(() => loadScreen.style.display = 'none', 2000);
   }
 })();
 
-// ── Gist fetch ─────────────────────────────────────────────────────────────────
+// ── Gist ───────────────────────────────────────────────────────────────────────
 async function fetchGist(id, filename) {
   const res = await fetch(`https://api.github.com/gists/${id}`, {
     headers: { 'Accept': 'application/vnd.github+json' }
   });
   if (!res.ok) throw new Error(`Gist fetch failed (${res.status})`);
-  const data = await res.json();
+  const data    = await res.json();
   const content = data.files?.[filename]?.content;
-  if (!content) throw new Error(`File ${filename} not found in Gist`);
+  if (!content) throw new Error(`${filename} not found in Gist`);
   return JSON.parse(content);
 }
 
 async function patchGist(id, filename, content) {
-    const res = await fetch(`https://basicworld.vercel.app/api/gist?id=${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ filename, content: JSON.stringify(content) })
-    });
-    if (!res.ok) throw new Error(`Gist patch failed (${res.status})`);
-    return res.json();
+  // Points to your Vercel proxy function
+  const res = await fetch(`https://basicworld.vercel.app/api/gist?id=${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, content: JSON.stringify(content) })
+  });
+  if (!res.ok) throw new Error(`Gist patch failed (${res.status})`);
+  return res.json();
 }
 
 // ── Canvas setup ───────────────────────────────────────────────────────────────
 function initCanvas() {
   canvas.width  = W * PIXEL_SIZE;
   canvas.height = H * PIXEL_SIZE;
-  sizeEl.textContent = `${W}×${H}`;
+  resetView();
 }
 
+function resetView() {
+  const area = canvasArea.getBoundingClientRect();
+  const fitScale = Math.min(
+    (area.width  * 0.95) / canvas.width,
+    (area.height * 0.95) / canvas.height,
+    2
+  );
+  scale   = fitScale;
+  offsetX = (area.width  - canvas.width  * scale) / 2;
+  offsetY = (area.height - canvas.height * scale) / 2;
+  applyTransform();
+}
+
+function applyTransform() {
+  canvas.style.transform      = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+  canvas.style.transformOrigin = '0 0';
+}
+
+// ── Draw ───────────────────────────────────────────────────────────────────────
 function drawCanvas() {
   const now = Date.now();
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   for (let x = 0; x < W; x++) {
     for (let y = 0; y < H; y++) {
@@ -741,129 +821,199 @@ function drawCanvas() {
       const pixel   = CANVAS_STATE[key];
       const pending = placements.find(p => p.x === x && p.y === y);
 
-      // Base color
-      ctx.fillStyle = pending
-        ? pending.color
-        : (pixel?.color || '#FFFFFF');
+      ctx.fillStyle = pending ? pending.color : (pixel?.color || '#FFFFFF');
       ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
 
-      // Protection overlay
-      const isProtected = pixel && pixel.protectedUntil > now && !pending;
-      if (isProtected) {
-        ctx.fillStyle = 'rgba(100,180,255,0.35)';
+      if (pixel?.protectedUntil > now && !pending) {
+        ctx.fillStyle = 'rgba(100,180,255,0.32)';
         ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
       }
 
-      // Pending outline
       if (pending) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-        ctx.lineWidth   = 1;
-        ctx.strokeRect(x * PIXEL_SIZE + 0.5, y * PIXEL_SIZE + 0.5, PIXEL_SIZE - 1, PIXEL_SIZE - 1);
+        ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+        ctx.lineWidth   = 1.5;
+        ctx.strokeRect(x * PIXEL_SIZE + 1, y * PIXEL_SIZE + 1, PIXEL_SIZE - 2, PIXEL_SIZE - 2);
       }
     }
   }
 
-  // Grid lines (subtle)
-  ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+  // Grid
+  ctx.strokeStyle = 'rgba(0,0,0,0.1)';
   ctx.lineWidth   = 0.5;
   for (let x = 0; x <= W; x++) {
-    ctx.beginPath();
-    ctx.moveTo(x * PIXEL_SIZE, 0);
-    ctx.lineTo(x * PIXEL_SIZE, H * PIXEL_SIZE);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x * PIXEL_SIZE, 0); ctx.lineTo(x * PIXEL_SIZE, H * PIXEL_SIZE); ctx.stroke();
   }
   for (let y = 0; y <= H; y++) {
-    ctx.beginPath();
-    ctx.moveTo(0, y * PIXEL_SIZE);
-    ctx.lineTo(W * PIXEL_SIZE, y * PIXEL_SIZE);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, y * PIXEL_SIZE); ctx.lineTo(W * PIXEL_SIZE, y * PIXEL_SIZE); ctx.stroke();
   }
 }
 
-// ── Canvas interaction ─────────────────────────────────────────────────────────
-function getPixelCoords(e) {
-  const rect  = canvas.getBoundingClientRect();
-  const scaleX = canvas.width  / rect.width;
-  const scaleY = canvas.height / rect.height;
-  const px    = (e.clientX - rect.left) * scaleX;
-  const py    = (e.clientY - rect.top)  * scaleY;
+// ── Coords from event ──────────────────────────────────────────────────────────
+function getCoordsFromClient(clientX, clientY) {
+  const areaRect = canvasArea.getBoundingClientRect();
+  const cx = (clientX - areaRect.left - offsetX) / scale;
+  const cy = (clientY - areaRect.top  - offsetY) / scale;
   return {
-    x: Math.floor(px / PIXEL_SIZE),
-    y: Math.floor(py / PIXEL_SIZE),
+    x: Math.floor(cx / PIXEL_SIZE),
+    y: Math.floor(cy / PIXEL_SIZE),
   };
 }
 
-canvas.addEventListener('click', (e) => {
+// ── Mouse events ───────────────────────────────────────────────────────────────
+let mouseDownPos = null;
+let didPan       = false;
+
+canvasArea.addEventListener('mousedown', (e) => {
+  if (e.button !== 0) return;
+  mouseDownPos = { x: e.clientX, y: e.clientY };
+  didPan       = false;
+  isPanning    = true;
+  panStart     = { x: e.clientX - offsetX, y: e.clientY - offsetY };
+  canvasArea.style.cursor = 'grabbing';
+});
+
+canvasArea.addEventListener('mousemove', (e) => {
+  if (isPanning) {
+    const dx = Math.abs(e.clientX - mouseDownPos.x);
+    const dy = Math.abs(e.clientY - mouseDownPos.y);
+    if (dx > 4 || dy > 4) didPan = true;
+    offsetX = e.clientX - panStart.x;
+    offsetY = e.clientY - panStart.y;
+    applyTransform();
+  }
+
+  const { x, y } = getCoordsFromClient(e.clientX, e.clientY);
+  if (x >= 0 && x < W && y >= 0 && y < H) {
+    coordTip.textContent   = `(${x}, ${y})`;
+    coordTip.style.display = 'block';
+  } else {
+    coordTip.style.display = 'none';
+  }
+});
+
+canvasArea.addEventListener('mouseup', (e) => {
+  canvasArea.style.cursor = 'crosshair';
+  isPanning = false;
+  if (!didPan) handlePlace(e.clientX, e.clientY);
+});
+
+canvasArea.addEventListener('mouseleave', () => {
+  isPanning = false;
+  coordTip.style.display = 'none';
+  canvasArea.style.cursor = 'crosshair';
+});
+
+// Scroll to zoom
+canvasArea.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const delta    = e.deltaY > 0 ? 0.9 : 1.1;
+  const areaRect = canvasArea.getBoundingClientRect();
+  const mouseX   = e.clientX - areaRect.left;
+  const mouseY   = e.clientY - areaRect.top;
+  const newScale = Math.max(0.5, Math.min(10, scale * delta));
+  offsetX = mouseX - (mouseX - offsetX) * (newScale / scale);
+  offsetY = mouseY - (mouseY - offsetY) * (newScale / scale);
+  scale   = newScale;
+  applyTransform();
+}, { passive: false });
+
+// ── Touch events ───────────────────────────────────────────────────────────────
+let touchStart   = null;
+let touchDidMove = false;
+
+canvasArea.addEventListener('touchstart', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    touchStart   = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    touchDidMove = false;
+    panStart     = { x: e.touches[0].clientX - offsetX, y: e.touches[0].clientY - offsetY };
+    lastPinchDist = null;
+  } else if (e.touches.length === 2) {
+    lastPinchDist = getPinchDist(e.touches);
+  }
+}, { passive: false });
+
+canvasArea.addEventListener('touchmove', (e) => {
+  e.preventDefault();
+  if (e.touches.length === 2) {
+    // Pinch zoom
+    const dist    = getPinchDist(e.touches);
+    if (lastPinchDist) {
+      const delta    = dist / lastPinchDist;
+      const midX     = (e.touches[0].clientX + e.touches[1].clientX) / 2 - canvasArea.getBoundingClientRect().left;
+      const midY     = (e.touches[0].clientY + e.touches[1].clientY) / 2 - canvasArea.getBoundingClientRect().top;
+      const newScale = Math.max(0.5, Math.min(10, scale * delta));
+      offsetX = midX - (midX - offsetX) * (newScale / scale);
+      offsetY = midY - (midY - offsetY) * (newScale / scale);
+      scale   = newScale;
+      applyTransform();
+    }
+    lastPinchDist = dist;
+  } else if (e.touches.length === 1 && touchStart) {
+    const dx = Math.abs(e.touches[0].clientX - touchStart.x);
+    const dy = Math.abs(e.touches[0].clientY - touchStart.y);
+    if (dx > 6 || dy > 6) touchDidMove = true;
+    offsetX = e.touches[0].clientX - panStart.x;
+    offsetY = e.touches[0].clientY - panStart.y;
+    applyTransform();
+  }
+}, { passive: false });
+
+canvasArea.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  if (!touchDidMove && e.changedTouches.length === 1) {
+    handlePlace(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }
+  lastPinchDist = null;
+}, { passive: false });
+
+function getPinchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// ── Place pixel ────────────────────────────────────────────────────────────────
+function handlePlace(clientX, clientY) {
   if (!SESSION) return;
-  const { x, y } = getPixelCoords(e);
+  const { x, y } = getCoordsFromClient(clientX, clientY);
   if (x < 0 || x >= W || y < 0 || y >= H) return;
+
+  // Close any open panels on canvas tap
+  colorPanel.classList.remove('open');
+  placementsPanel.classList.remove('open');
 
   const key       = `${x},${y}`;
   const pixel     = CANVAS_STATE[key];
-  const alreadyPending = placements.findIndex(p => p.x === x && p.y === y);
+  const existing  = placements.findIndex(p => p.x === x && p.y === y);
 
-  // If clicking an existing pending pixel — replace its color
-  if (alreadyPending !== -1) {
-    placements[alreadyPending].color = selectedColor;
+  if (existing !== -1) {
+    // Re-color existing placement
+    placements[existing].color = selectedColor;
     drawCanvas();
     updateUI();
-    updatePlacementsList();
+    updateList();
+    showToast(`Updated (${x}, ${y}) to ${selectedColor}`);
     return;
   }
 
-  // Check protection
   if (pixel?.protectedUntil > Date.now()) {
-    const remaining = Math.ceil((pixel.protectedUntil - Date.now()) / 60000);
-    showStatus('warn', `That pixel is protected for ~${remaining} more minute${remaining !== 1 ? 's' : ''}. Pick a different spot!`);
+    const mins = Math.ceil((pixel.protectedUntil - Date.now()) / 60000);
+    showToast(`Protected for ~${mins} more min. Pick another spot!`, 'warn');
     return;
   }
 
-  // Check credits
-  const creditsUsed = placements.length + (SESSION.hasFreePixel ? 0 : 0);
   if (placements.length >= credits) {
-    showStatus('warn', `You've used all ${credits} pixel${credits !== 1 ? 's' : ''}. Undo one or hit Save & Return.`);
+    showToast(`All ${credits} pixel${credits !== 1 ? 's' : ''} placed. Save or undo one first.`, 'warn');
     return;
   }
 
   placements.push({ x, y, color: selectedColor });
   drawCanvas();
   updateUI();
-  updatePlacementsList();
-  clearStatus();
-});
-
-canvas.addEventListener('mousemove', (e) => {
-  const rect    = canvas.getBoundingClientRect();
-  const { x, y } = getPixelCoords(e);
-
-  if (x < 0 || x >= W || y < 0 || y >= H) {
-    crosshair.style.display = 'none';
-    coordTip.style.display  = 'none';
-    return;
-  }
-
-  // Crosshair
-  crosshair.style.display = 'block';
-  const px = (x * PIXEL_SIZE) * (rect.width  / canvas.width);
-  const py = (y * PIXEL_SIZE) * (rect.height / canvas.height);
-  const ps = PIXEL_SIZE * (rect.width / canvas.width);
-
-  crossH.style.top    = `${py + ps / 2}px`;
-  crossV.style.left   = `${px + ps / 2}px`;
-
-  // Coord tip
-  coordTip.style.display = 'block';
-  coordTip.textContent   = `(${x}, ${y})`;
-  const tipX = Math.min(e.clientX - rect.left + 12, rect.width  - 80);
-  const tipY = Math.max(e.clientY - rect.top  - 28, 4);
-  coordTip.style.left = `${tipX}px`;
-  coordTip.style.top  = `${tipY}px`;
-});
-
-canvas.addEventListener('mouseleave', () => {
-  crosshair.style.display = 'none';
-  coordTip.style.display  = 'none';
-});
+  updateList();
+  showToast(`Placed at (${x}, ${y})`, 'ok');
+}
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 function buildPalette() {
@@ -873,17 +1023,23 @@ function buildPalette() {
     sw.className = 'swatch' + (hex === selectedColor ? ' selected' : '');
     sw.style.background = hex;
     sw.title = hex;
-    sw.addEventListener('click', () => {
-      selectedColor = hex;
-      document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
-      sw.classList.add('selected');
-      colorSwatch.style.background = hex;
-      colorHex.textContent = hex;
-    });
+    sw.addEventListener('click', () => selectColor(hex));
     paletteEl.appendChild(sw);
   });
-  colorSwatch.style.background = selectedColor;
-  colorHex.textContent = selectedColor;
+  colorToggle.style.background = selectedColor;
+  document.getElementById('colorSwatchLg').style.background = selectedColor;
+  document.getElementById('colorHex').textContent = selectedColor;
+}
+
+function selectColor(hex) {
+  selectedColor = hex;
+  document.querySelectorAll('.swatch').forEach(s => s.classList.remove('selected'));
+  const swatches = paletteEl.querySelectorAll('.swatch');
+  swatches.forEach(s => { if (s.title === hex) s.classList.add('selected'); });
+  colorToggle.style.background = hex;
+  document.getElementById('colorSwatchLg').style.background = hex;
+  document.getElementById('colorHex').textContent = hex;
+  colorPanel.classList.remove('open');
 }
 
 // ── UI updates ─────────────────────────────────────────────────────────────────
@@ -891,37 +1047,33 @@ function updateUI() {
   const remaining = credits - placements.length;
   creditsEl.textContent = remaining;
   placedEl.textContent  = placements.length;
-  btnDone.disabled  = placements.length === 0;
+  saveBadge.textContent = placements.length;
+  btnSave.disabled  = placements.length === 0;
   btnUndo.disabled  = placements.length === 0;
-  btnClear.disabled = placements.length === 0;
 }
 
-function updatePlacementsList() {
+function updateList() {
   if (placements.length === 0) {
-    listEl.innerHTML = '<div class="empty-placements">Click pixels on the canvas to place them.</div>';
+    placementsList.innerHTML = '<div class="empty-list">No pixels placed yet.</div>';
     return;
   }
-  listEl.innerHTML = '';
+  placementsList.innerHTML = '';
   [...placements].reverse().forEach((p, ri) => {
     const i   = placements.length - 1 - ri;
     const row = document.createElement('div');
     row.className = 'placement-row';
     row.innerHTML = `
       <div class="placement-dot" style="background:${p.color};"></div>
-      <span>(${p.x}, ${p.y})</span>
-      <span style="color:var(--muted);font-size:10px;">${p.color}</span>
-      <span class="placement-undo" title="Remove" data-idx="${i}">✕</span>
+      <span>(${p.x},${p.y})</span>
+      <span style="font-size:9px;color:var(--muted);">${p.color}</span>
+      <span class="placement-undo" data-idx="${i}" title="Remove">✕</span>
     `;
-    listEl.appendChild(row);
+    placementsList.appendChild(row);
   });
-
-  listEl.querySelectorAll('.placement-undo').forEach(btn => {
+  placementsList.querySelectorAll('.placement-undo').forEach(btn => {
     btn.addEventListener('click', () => {
-      const idx = parseInt(btn.dataset.idx);
-      placements.splice(idx, 1);
-      drawCanvas();
-      updateUI();
-      updatePlacementsList();
+      placements.splice(parseInt(btn.dataset.idx), 1);
+      drawCanvas(); updateUI(); updateList();
     });
   });
 }
@@ -929,17 +1081,17 @@ function updatePlacementsList() {
 // ── Timer ──────────────────────────────────────────────────────────────────────
 function startTimer() {
   function tick() {
-    const ms      = expiresAt - Date.now();
+    const ms = expiresAt - Date.now();
     if (ms <= 0) {
       timerEl.textContent = 'Expired';
       timerEl.classList.add('urgent');
-      showStatus('error', 'Session expired. Your pixel balance is unchanged — go back to Discord and use /pixel-place for a new session.');
-      btnDone.disabled = true;
+      showToast('Session expired. Pixel balance unchanged — use /pixel-place again.', 'error', 0);
+      btnSave.disabled = true;
       return;
     }
     const m = Math.floor(ms / 60000);
     const s = Math.floor((ms % 60000) / 1000);
-    timerEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+    timerEl.textContent = `${m}:${String(s).padStart(2,'0')}`;
     timerEl.classList.toggle('urgent', m < 5);
     setTimeout(tick, 1000);
   }
@@ -947,54 +1099,77 @@ function startTimer() {
 }
 
 // ── Buttons ────────────────────────────────────────────────────────────────────
+colorToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  placementsPanel.classList.remove('open');
+  colorPanel.classList.toggle('open');
+});
+
+btnList.addEventListener('click', (e) => {
+  e.stopPropagation();
+  colorPanel.classList.remove('open');
+  placementsPanel.classList.toggle('open');
+  if (placementsPanel.classList.contains('open')) updateList();
+});
+
+document.addEventListener('click', () => {
+  colorPanel.classList.remove('open');
+  placementsPanel.classList.remove('open');
+});
+
+colorPanel.addEventListener('click', e => e.stopPropagation());
+placementsPanel.addEventListener('click', e => e.stopPropagation());
+
 btnUndo.addEventListener('click', () => {
   if (placements.length === 0) return;
   placements.pop();
-  drawCanvas();
-  updateUI();
-  updatePlacementsList();
+  drawCanvas(); updateUI(); updateList();
 });
 
-btnClear.addEventListener('click', () => {
-  placements = [];
-  drawCanvas();
-  updateUI();
-  updatePlacementsList();
-});
+btnZoomIn.addEventListener('click',    () => zoom(1.3));
+btnZoomOut.addEventListener('click',   () => zoom(0.77));
+btnZoomReset.addEventListener('click', () => resetView());
 
-btnDone.addEventListener('click', async () => {
+function zoom(factor) {
+  const area    = canvasArea.getBoundingClientRect();
+  const cx      = area.width  / 2;
+  const cy      = area.height / 2;
+  const newScale = Math.max(0.5, Math.min(10, scale * factor));
+  offsetX = cx - (cx - offsetX) * (newScale / scale);
+  offsetY = cy - (cy - offsetY) * (newScale / scale);
+  scale   = newScale;
+  applyTransform();
+}
+
+btnSave.addEventListener('click', async () => {
   if (placements.length === 0) return;
-
-  btnDone.disabled = true;
-  btnDone.textContent = 'Saving…';
+  btnSave.disabled = true;
+  btnSave.textContent = 'Saving…';
 
   try {
-    // Patch the session Gist with placements
     const updated = { ...SESSION, placements, status: 'submitted' };
     await patchGist(gistId, 'pixel-session.json', updated);
-
-    // Show done screen
     doneScreen.style.display = 'flex';
   } catch (err) {
     console.error(err);
-    showStatus('error', 'Failed to save placements: ' + err.message + '. Please try again.');
-    btnDone.disabled = false;
-    btnDone.textContent = 'Save & Return';
+    showToast('Save failed: ' + err.message + ' — please try again.', 'error');
+    btnSave.disabled = false;
+    btnSave.innerHTML = `✅ Save &amp; Return <span class="save-badge">${placements.length}</span>`;
   }
 });
 
-// ── Status helpers ─────────────────────────────────────────────────────────────
-function showStatus(type, msg) {
-  statusMsg.className = `status-msg ${type} show`;
-  statusText.textContent = msg;
+// ── Toast ──────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+const toastEl  = document.getElementById('toast');
+
+function showToast(msg, type = '', duration = 3000) {
+  toastEl.textContent = msg;
+  toastEl.className   = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  if (duration > 0) {
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), duration);
+  }
 }
-
-function showError(msg) { showStatus('error', msg); }
-function clearStatus()  { statusMsg.className = 'status-msg'; }
-
-// ── Loader ─────────────────────────────────────────────────────────────────────
-function setLoadText(t) { loadText.textContent = t; }
-function hideLoader()   { loadScreen.style.display = 'none'; }
 </script>
 </body>
 </html>
