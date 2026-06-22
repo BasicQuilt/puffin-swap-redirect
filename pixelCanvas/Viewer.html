@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DDAO Pixel Canvas — Live View</title>
+<style>
+  :root {
+    --bg:       #0d0d14;
+    --surface:  #14141f;
+    --border:   #1e1e30;
+    --purple:   #7b2fbe;
+    --purple-hi:#a855f7;
+    --cyan:     #22d3ee;
+    --text:     #e2e2f0;
+    --muted:    #6b6b8a;
+    --green:    #22c55e;
+    --radius:   6px;
+    --mono:     'JetBrains Mono', 'Fira Code', monospace;
+    --sans:     'Inter', system-ui, sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 700px;
+    padding: 24px 16px 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* Header */
+  header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--purple-hi);
+    box-shadow: 0 0 12px var(--purple-hi);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .logo-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .logo-text span { color: var(--purple-hi); }
+
+  /* Refresh badge */
+  .refresh-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 10px;
+  }
+
+  .refresh-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  .refresh-dot.loading {
+    background: var(--cyan);
+    box-shadow: 0 0 6px var(--cyan);
+    animation: blink 0.6s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Stats bar */
+  .stats-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 10px 8px;
+    border-right: 1px solid var(--border);
+  }
+
+  .stat:last-child { border-right: none; }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-family: var(--mono);
+  }
+
+  .stat-value {
+    font-size: 15px;
+    font-weight: 700;
+    font-family: var(--mono);
+    color: var(--text);
+  }
+
+  .stat-value.purple { color: var(--purple-hi); }
+  .stat-value.cyan   { color: var(--cyan); }
+
+  /* Canvas */
+  .canvas-wrap {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    position: relative;
+  }
+
+  #pixelCanvas {
+    display: block;
+    width: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    cursor: crosshair;
+  }
+
+  /* Coord tooltip */
+  .coord-tip {
+    position: absolute;
+    background: rgba(13,13,20,0.92);
+    border: 1px solid var(--purple);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--cyan);
+    pointer-events: none;
+    display: none;
+    white-space: nowrap;
+    z-index: 10;
+  }
+
+  /* Pixel info popup */
+  .pixel-popup {
+    position: absolute;
+    background: rgba(13,13,20,0.96);
+    border: 1px solid var(--purple);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    pointer-events: none;
+    display: none;
+    z-index: 20;
+    min-width: 140px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  .pixel-popup-color {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+
+  .pixel-popup-dot {
+    width: 12px; height: 12px;
+    border-radius: 2px;
+    border: 1px solid rgba(255,255,255,0.2);
+    flex-shrink: 0;
+  }
+
+  .pixel-popup-row {
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.6;
+  }
+
+  .pixel-popup-row span { color: var(--text); }
+
+  /* Loading */
+  #loadScreen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--purple-hi);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .load-text {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  /* Footer */
+  .footer {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: var(--mono);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .footer a {
+    color: var(--purple-hi);
+    text-decoration: none;
+  }
+
+  .footer a:hover { text-decoration: underline; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div id="loadScreen">
+  <div class="spinner"></div>
+  <div class="load-text">Loading canvas…</div>
+</div>
+
+<div class="page">
+
+  <header>
+    <div class="logo">
+      <div class="logo-dot"></div>
+      <div class="logo-text">DDAO <span>Pixel Canvas</span></div>
+    </div>
+    <div class="refresh-badge">
+      <div class="refresh-dot" id="refreshDot"></div>
+      <span id="refreshLabel">Refreshes in 30s</span>
+    </div>
+  </header>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-label">Pixels Placed</div>
+      <div class="stat-value purple" id="statPlaced">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Canvas</div>
+      <div class="stat-value" id="statSize">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">% Filled</div>
+      <div class="stat-value cyan" id="statPct">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Last Updated</div>
+      <div class="stat-value" id="statUpdated">—</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="pixelCanvas"></canvas>
+    <div class="coord-tip" id="coordTip"></div>
+    <div class="pixel-popup" id="pixelPopup">
+      <div class="pixel-popup-color">
+        <div class="pixel-popup-dot" id="popupDot"></div>
+        <span id="popupColor">#FFFFFF</span>
+      </div>
+      <div class="pixel-popup-row">Coords: <span id="popupCoords">—</span></div>
+      <div class="pixel-popup-row" id="popupProtRow">Protected: <span id="popupProt">—</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    Hover to inspect · Click to pin pixel info<br>
+    Canvas updates every 30 seconds · Place pixels in Discord
+  </div>
+
+</div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────────
+// Replace with your actual canvas state Gist ID
+// You can find it in your pixel.db: SELECT value FROM canvas_meta WHERE key='canvas_state_gist_id';
+const CANVAS_STATE_GIST_ID = 'YOUR_CANVAS_STATE_GIST_ID';
+const REFRESH_INTERVAL_MS  = 30000;
+const PIXEL_SIZE           = 8;
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let CANVAS_STATE = {};
+let W = 64, H = 64;
+let pinnedPixel  = null;
+let refreshTimer = null;
+let countdown    = 30;
+
+// ── DOM ────────────────────────────────────────────────────────────────────────
+const canvas      = document.getElementById('pixelCanvas');
+const ctx         = canvas.getContext('2d');
+const loadScreen  = document.getElementById('loadScreen');
+const coordTip    = document.getElementById('coordTip');
+const pixelPopup  = document.getElementById('pixelPopup');
+const refreshDot  = document.getElementById('refreshDot');
+const refreshLabel = document.getElementById('refreshLabel');
+
+// ── Boot ───────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadCanvas();
+  loadScreen.style.display = 'none';
+  startRefreshCycle();
+})();
+
+// ── Load canvas state ──────────────────────────────────────────────────────────
+async function loadCanvas() {
+  refreshDot.classList.add('loading');
+  refreshLabel.textContent = 'Updating…';
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/gists/${CANVAS_STATE_GIST_ID}`,
+      { headers: { 'Accept': 'application/vnd.github+json' } }
+    );
+    if (!res.ok) throw new Error(`Gist fetch failed (${res.status})`);
+    const data    = await res.json();
+    const content = data.files?.['canvas-state.json']?.content;
+    if (!content) throw new Error('canvas-state.json not found in Gist');
+
+    const state   = JSON.parse(content);
+    CANVAS_STATE  = state.pixels || {};
+    W             = state.width  || 64;
+    H             = state.height || 64;
+
+    canvas.width  = W * PIXEL_SIZE;
+    canvas.height = H * PIXEL_SIZE;
+
+    drawCanvas();
+    updateStats(state);
+  } catch (err) {
+    console.error('Error loading canvas:', err);
+  }
+
+  refreshDot.classList.remove('loading');
+}
+
+// ── Draw ───────────────────────────────────────────────────────────────────────
+function drawCanvas() {
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const now = Date.now();
+
+  for (let x = 0; x < W; x++) {
+    for (let y = 0; y < H; y++) {
+      const key   = `${x},${y}`;
+      const pixel = CANVAS_STATE[key];
+      const color = pixel?.color || '#FFFFFF';
+
+      ctx.fillStyle = color;
+      ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+
+      // Protected shimmer
+      if (pixel?.protectedUntil > now) {
+        ctx.fillStyle = 'rgba(100,180,255,0.3)';
+        ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
+      }
+    }
+  }
+
+  // Subtle grid
+  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.lineWidth   = 0.5;
+  for (let x = 0; x <= W; x++) {
+    ctx.beginPath();
+    ctx.moveTo(x * PIXEL_SIZE, 0);
+    ctx.lineTo(x * PIXEL_SIZE, H * PIXEL_SIZE);
+    ctx.stroke();
+  }
+  for (let y = 0; y <= H; y++) {
+    ctx.beginPath();
+    ctx.moveTo(0, y * PIXEL_SIZE);
+    ctx.lineTo(W * PIXEL_SIZE, y * PIXEL_SIZE);
+    ctx.stroke();
+  }
+
+  // Redraw pinned pixel highlight
+  if (pinnedPixel) highlightPixel(pinnedPixel.x, pinnedPixel.y);
+}
+
+function highlightPixel(x, y) {
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth   = 2;
+  ctx.strokeRect(
+    x * PIXEL_SIZE + 1,
+    y * PIXEL_SIZE + 1,
+    PIXEL_SIZE - 2,
+    PIXEL_SIZE - 2
+  );
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────────
+function updateStats(state) {
+  const placed  = Object.keys(state.pixels || {}).length;
+  const total   = W * H;
+  const pct     = ((placed / total) * 100).toFixed(1);
+  const updated = state.updatedAt
+    ? new Date(state.updatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : '—';
+
+  document.getElementById('statPlaced').textContent  = placed.toLocaleString();
+  document.getElementById('statSize').textContent    = `${W}×${H}`;
+  document.getElementById('statPct').textContent     = `${pct}%`;
+  document.getElementById('statUpdated').textContent = updated;
+}
+
+// ── Refresh cycle ──────────────────────────────────────────────────────────────
+function startRefreshCycle() {
+  countdown = REFRESH_INTERVAL_MS / 1000;
+
+  const tick = setInterval(() => {
+    countdown--;
+    if (countdown > 0) {
+      refreshLabel.textContent = `Refreshes in ${countdown}s`;
+    } else {
+      clearInterval(tick);
+      loadCanvas().then(() => {
+        startRefreshCycle();
+      });
+    }
+  }, 1000);
+}
+
+// ── Canvas interaction ─────────────────────────────────────────────────────────
+function getCoords(e) {
+  const rect   = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const touch  = e.touches?.[0] || e;
+  return {
+    x: Math.floor((touch.clientX - rect.left) * scaleX / PIXEL_SIZE),
+    y: Math.floor((touch.clientY - rect.top)  * scaleY / PIXEL_SIZE),
+  };
+}
+
+function showPopup(x, y, clientX, clientY) {
+  const key   = `${x},${y}`;
+  const pixel = CANVAS_STATE[key];
+  const color = pixel?.color || '#FFFFFF';
+  const isProtected = pixel?.protectedUntil > Date.now();
+  const remaining   = isProtected
+    ? Math.ceil((pixel.protectedUntil - Date.now()) / 60000) + ' min'
+    : 'No';
+
+  document.getElementById('popupDot').style.background    = color;
+  document.getElementById('popupColor').textContent       = color;
+  document.getElementById('popupCoords').textContent      = `(${x}, ${y})`;
+  document.getElementById('popupProt').textContent        = remaining;
+
+  const wrap   = document.getElementById('canvasWrap');
+  const wRect  = wrap.getBoundingClientRect();
+  const popupW = 150;
+  const popupH = 80;
+  let   left   = clientX - wRect.left + 12;
+  let   top    = clientY - wRect.top  - popupH - 8;
+  if (left + popupW > wRect.width)  left = clientX - wRect.left - popupW - 8;
+  if (top < 0)                      top  = clientY - wRect.top  + 16;
+
+  pixelPopup.style.left    = `${left}px`;
+  pixelPopup.style.top     = `${top}px`;
+  pixelPopup.style.display = 'block';
+}
+
+// Hover — show coord tip + popup
+canvas.addEventListener('mousemove', (e) => {
+  if (pinnedPixel) return; // don't move popup when pinned
+  const { x, y } = getCoords(e);
+  if (x < 0 || x >= W || y < 0 || y >= H) {
+    coordTip.style.display  = 'none';
+    pixelPopup.style.display = 'none';
+    return;
+  }
+
+  // Coord tip
+  const rect  = canvas.getBoundingClientRect();
+  coordTip.textContent   = `(${x}, ${y})`;
+  coordTip.style.display = 'block';
+  coordTip.style.left    = `${e.clientX - rect.left + 12}px`;
+  coordTip.style.top     = `${Math.max(e.clientY - rect.top - 24, 4)}px`;
+
+  showPopup(x, y, e.clientX, e.clientY);
+});
+
+canvas.addEventListener('mouseleave', () => {
+  if (pinnedPixel) return;
+  coordTip.style.display   = 'none';
+  pixelPopup.style.display = 'none';
+});
+
+// Click — pin/unpin pixel info
+canvas.addEventListener('click', (e) => {
+  const { x, y } = getCoords(e);
+  if (x < 0 || x >= W || y < 0 || y >= H) return;
+
+  if (pinnedPixel && pinnedPixel.x === x && pinnedPixel.y === y) {
+    // Unpin
+    pinnedPixel = null;
+    pixelPopup.style.display = 'none';
+    drawCanvas();
+  } else {
+    // Pin
+    pinnedPixel = { x, y };
+    drawCanvas();
+    showPopup(x, y, e.clientX, e.clientY);
+  }
+});
+
+// Touch support
+canvas.addEventListener('touchend', (e) => {
+  e.preventDefault();
+  const touch = e.changedTouches[0];
+  const { x, y } = getCoords(touch);
+  if (x < 0 || x >= W || y < 0 || y >= H) return;
+
+  if (pinnedPixel && pinnedPixel.x === x && pinnedPixel.y === y) {
+    pinnedPixel = null;
+    pixelPopup.style.display = 'none';
+    drawCanvas();
+  } else {
+    pinnedPixel = { x, y };
+    drawCanvas();
+    showPopup(x, y, touch.clientX, touch.clientY);
+  }
+}, { passive: false });
+</script>
+</body>
+</html>
