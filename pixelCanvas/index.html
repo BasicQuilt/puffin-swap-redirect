@@ -496,6 +496,8 @@ const doneScreen = document.getElementById('doneScreen');
     startTimer();
 
     loadScreen.style.display = 'none';
+    // fitView needs real dimensions — defer one frame after load screen hides
+    requestAnimationFrame(() => fitView());
     showToast(`${credits} pixel${credits !== 1 ? 's' : ''} available — tap to place!`, 'ok');
   } catch (e) {
     console.error(e);
@@ -529,7 +531,6 @@ async function patchGist(id, file, data) {
 function initCanvas() {
   cvs.width  = W * PS;
   cvs.height = H * PS;
-  fitView();
 }
 
 function fitView() {
@@ -789,9 +790,9 @@ function doZoom(f) {
   scale = ns;
   applyXY();
 }
-document.getElementById('zIn').addEventListener('click',    () => doZoom(1.3));
-document.getElementById('zOut').addEventListener('click',   () => doZoom(0.77));
-document.getElementById('zReset').addEventListener('click', () => fitView());
+document.getElementById('zIn').addEventListener('click',    e => { e.stopPropagation(); doZoom(1.3); });
+document.getElementById('zOut').addEventListener('click',   e => { e.stopPropagation(); doZoom(0.77); });
+document.getElementById('zReset').addEventListener('click', e => { e.stopPropagation(); fitView(); });
 
 // ── Undo ───────────────────────────────────────────────────────────────────────
 btnUndo.addEventListener('click', () => {
