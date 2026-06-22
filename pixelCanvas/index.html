@@ -715,15 +715,10 @@ async function fetchGist(id, filename) {
 }
 
 async function patchGist(id, filename, content) {
-    const res = await fetch(`https://api.github.com/gists/${id}`, {
+    const res = await fetch(`https://YOUR_PEBBLE_HOST_URL:3001/gist/${id}`, {
         method: 'PATCH',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept':       'application/vnd.github+json',
-        },
-        body: JSON.stringify({
-            files: { [filename]: { content: JSON.stringify(content) } }
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filename, content: JSON.stringify(content) })
     });
     if (!res.ok) throw new Error(`Gist patch failed (${res.status})`);
     return res.json();
