@@ -645,7 +645,10 @@ area.addEventListener('mousemove', e => {
   }
   const { x, y } = pxCoord(e.clientX, e.clientY);
   if (x >= 0 && x < W && y >= 0 && y < H) {
-    coordTip.textContent   = `(${x},${y})`;
+    const key   = `${x},${y}`;
+    const pixel = STATE[key];
+    const owner = pixel?.ownerName;
+    coordTip.textContent   = owner ? `(${x},${y}) · ${owner}` : `(${x},${y})`;
     coordTip.style.display = 'block';
   } else {
     coordTip.style.display = 'none';
