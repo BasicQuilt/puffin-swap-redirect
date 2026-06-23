@@ -33,15 +33,14 @@
     user-select: none;
   }
 
-  /* ─── Full-height layout: top bar → canvas → bottom bar ─────────── */
   .shell {
     display: flex;
     flex-direction: column;
-    height: 100dvh; /* dvh handles mobile browser chrome */
+    height: 100dvh;
     width: 100vw;
   }
 
-  /* ─── Top bar ────────────────────────────────────────────────────── */
+  /* ─── Top bar ─────────────────────────────────────────────────────── */
   .top-bar {
     flex-shrink: 0;
     height: 52px;
@@ -97,7 +96,7 @@
   .pill-val.r { color: var(--red); animation: blink 1s step-end infinite; }
   @keyframes blink { 50% { opacity:.3; } }
 
-  /* ─── Canvas area ────────────────────────────────────────────────── */
+  /* ─── Canvas area ─────────────────────────────────────────────────── */
   .canvas-area {
     flex: 1;
     position: relative;
@@ -129,7 +128,6 @@
     z-index: 5;
   }
 
-  /* Zoom buttons */
   .zoom-btns {
     position: absolute;
     top: 8px; left: 8px;
@@ -154,7 +152,7 @@
   }
   .zoom-btn:active { opacity: .6; }
 
-  /* ─── Color bar (horizontal, always visible) ─────────────────────── */
+  /* ─── Color bar ───────────────────────────────────────────────────── */
   .color-bar {
     flex-shrink: 0;
     background: var(--surface);
@@ -186,10 +184,10 @@
     border: 2px solid transparent;
     transition: transform .1s, border-color .1s;
   }
-  .swatch:active    { transform: scale(.9); }
-  .swatch.selected  { border-color: #fff; box-shadow: 0 0 0 1px var(--purplhi); }
+  .swatch:active   { transform: scale(.9); }
+  .swatch.selected { border-color: #fff; box-shadow: 0 0 0 1px var(--purplhi); }
 
-  /* ─── Bottom action bar — ALWAYS VISIBLE ─────────────────────────── */
+  /* ─── Action bar ──────────────────────────────────────────────────── */
   .action-bar {
     flex-shrink: 0;
     background: var(--surface);
@@ -200,7 +198,6 @@
     gap: 8px;
   }
 
-  /* Selected color preview in action bar */
   .sel-color {
     width: 38px; height: 38px;
     border-radius: 8px;
@@ -226,7 +223,6 @@
   .undo-btn:active:not(:disabled) { opacity: .6; }
   .undo-btn:disabled { opacity: .3; cursor: not-allowed; }
 
-  /* THE SAVE BUTTON — takes remaining space, impossible to miss */
   .save-btn {
     flex: 1;
     height: 44px;
@@ -263,15 +259,12 @@
     font-size: 12px;
     font-weight: 700;
   }
-  .save-btn:disabled .save-count {
-    background: var(--border);
-    color: var(--muted);
-  }
+  .save-btn:disabled .save-count { background: var(--border); color: var(--muted); }
 
-  /* ─── Toast ──────────────────────────────────────────────────────── */
+  /* ─── Toast ───────────────────────────────────────────────────────── */
   .toast {
     position: fixed;
-    bottom: 130px; /* above action + color bars */
+    bottom: 130px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
     background: rgba(20,20,31,.96);
@@ -290,12 +283,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .toast.show               { opacity:1; transform:translateX(-50%) translateY(0); }
-  .toast.warn               { border-color:var(--orange); color:var(--orange); }
-  .toast.error              { border-color:var(--red);    color:var(--red); }
-  .toast.ok                 { border-color:var(--green);  color:var(--green); }
+  .toast.show  { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.warn  { border-color:var(--orange); color:var(--orange); }
+  .toast.error { border-color:var(--red);    color:var(--red); }
+  .toast.ok    { border-color:var(--green);  color:var(--green); }
 
-  /* ─── Screens ────────────────────────────────────────────────────── */
+  /* ─── Screens ─────────────────────────────────────────────────────── */
   .screen {
     position: fixed;
     inset: 0;
@@ -326,12 +319,9 @@
     letter-spacing: .1em;
   }
 
-  #doneScreen {
-    background: rgba(13,13,20,.97);
-    display: none;
-  }
+  #doneScreen { background: rgba(13,13,20,.97); display: none; }
 
-  .done-icon { font-size: 58px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
+  .done-icon  { font-size: 58px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
   @keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
 
   .done-title { font-size: 24px; font-weight: 700; color: var(--green); }
@@ -349,11 +339,13 @@
   <div class="screen-text" id="loadText">Loading session…</div>
 </div>
 
-<!-- Done screen -->
+<!-- Done screen — message changes based on Discord vs web mode -->
 <div class="screen" id="doneScreen">
   <div class="done-icon">✅</div>
   <div class="done-title">Pixels saved!</div>
-  <div class="done-sub">Go back to Discord and tap <b>Submit Pixels</b> to place them on the canvas.</div>
+  <div class="done-sub" id="doneSubText">
+    Go back to Discord and tap <b>Submit Pixels</b> to place them on the canvas.
+  </div>
 </div>
 
 <!-- Toast -->
@@ -362,7 +354,6 @@
 <!-- Shell -->
 <div class="shell">
 
-  <!-- Top bar -->
   <div class="top-bar">
     <div class="logo-dot"></div>
     <div class="top-title">DDAO <b>Canvas</b></div>
@@ -380,7 +371,6 @@
     </div>
   </div>
 
-  <!-- Canvas -->
   <div class="canvas-area" id="canvasArea">
     <canvas id="cvs"></canvas>
     <div class="coord-tip" id="coordTip"></div>
@@ -391,12 +381,10 @@
     </div>
   </div>
 
-  <!-- Color scroll bar — always visible, scroll horizontally for more -->
   <div class="color-bar" id="colorBar">
     <span class="color-label">Color →</span>
   </div>
 
-  <!-- Action bar — save button always full width on the right -->
   <div class="action-bar">
     <div class="sel-color" id="selColor"></div>
     <button class="undo-btn" id="btnUndo" disabled>↩ Undo</button>
@@ -420,51 +408,53 @@ const PALETTE = [
 ];
 
 // ── State ──────────────────────────────────────────────────────────────────────
-let SESSION      = null;
-let STATE        = {};      // canvas-state.json pixels
-let placements   = [];
-let color        = PALETTE[0];
-let credits      = 0;
-let gistId       = null;
-let expiresAt    = null;
+let SESSION    = null;
+let STATE      = {};
+let placements = [];
+let color      = PALETTE[0];
+let credits    = 0;
+let gistId     = null;
+let expiresAt  = null;
 let W = 64, H = 64;
 
-const PS = 8; // pixel size on canvas element (before CSS scale)
-let scale   = 1;
-let ox = 0, oy = 0;  // offset
+// Web mode — true when opened from the canvas-app web page inside an iframe
+let webMode  = false;
+let webAddr  = null;
 
-// pan tracking
-let panning  = false;
-let panSX    = 0, panSY = 0;
-let panMoved = false;
-
-// pinch
+const PS = 8;
+let scale = 1, ox = 0, oy = 0;
+let panning = false, panSX = 0, panSY = 0, panMoved = false;
 let lastPinch = 0;
 
 // ── DOM ────────────────────────────────────────────────────────────────────────
-const cvs        = document.getElementById('cvs');
-const ctx        = cvs.getContext('2d');
-const area       = document.getElementById('canvasArea');
-const colorBar   = document.getElementById('colorBar');
-const selColor   = document.getElementById('selColor');
-const creditsEl  = document.getElementById('creditsLeft');
-const placedEl   = document.getElementById('placedCount');
-const timerEl    = document.getElementById('timerVal');
-const saveCount  = document.getElementById('saveCount');
-const btnSave    = document.getElementById('btnSave');
-const btnUndo    = document.getElementById('btnUndo');
-const coordTip   = document.getElementById('coordTip');
-const toast      = document.getElementById('toast');
-const loadScreen = document.getElementById('loadScreen');
-const doneScreen = document.getElementById('doneScreen');
+const cvs         = document.getElementById('cvs');
+const ctx         = cvs.getContext('2d');
+const area        = document.getElementById('canvasArea');
+const colorBar    = document.getElementById('colorBar');
+const selColor    = document.getElementById('selColor');
+const creditsEl   = document.getElementById('creditsLeft');
+const placedEl    = document.getElementById('placedCount');
+const timerEl     = document.getElementById('timerVal');
+const saveCount   = document.getElementById('saveCount');
+const btnSave     = document.getElementById('btnSave');
+const btnUndo     = document.getElementById('btnUndo');
+const coordTip    = document.getElementById('coordTip');
+const toast       = document.getElementById('toast');
+const loadScreen  = document.getElementById('loadScreen');
+const doneScreen  = document.getElementById('doneScreen');
+const doneSubText = document.getElementById('doneSubText');
 
 // ── Boot ───────────────────────────────────────────────────────────────────────
 (async () => {
   const p = new URLSearchParams(location.search);
   gistId  = p.get('gist');
+  webMode = p.get('webMode') === '1';
+  webAddr = p.get('address') || null;
 
-  const webMode  = p.get('webMode') === '1';
-  const webAddr  = p.get('address') || null;
+  // Update done screen message for web mode
+  if (webMode) {
+    doneSubText.innerHTML = 'Your pixels have been submitted to the canvas!';
+  }
 
   if (!gistId) {
     setLoad('No session found.');
@@ -499,7 +489,6 @@ const doneScreen = document.getElementById('doneScreen');
     startTimer();
 
     loadScreen.style.display = 'none';
-    // fitView needs real dimensions — defer one frame after load screen hides
     requestAnimationFrame(() => fitView());
     showToast(`${credits} pixel${credits !== 1 ? 's' : ''} available — tap to place!`, 'ok');
   } catch (e) {
@@ -576,7 +565,6 @@ function draw() {
     }
   }
 
-  // grid
   ctx.strokeStyle = 'rgba(0,0,0,0.09)';
   ctx.lineWidth   = 0.5;
   for (let i = 0; i <= W; i++) {
@@ -605,7 +593,6 @@ function place(cx, cy) {
   const idx = placements.findIndex(p => p.x === x && p.y === y);
 
   if (idx !== -1) {
-    // re-color
     placements[idx].color = color;
     draw(); updateUI();
     showToast(`(${x},${y}) recolored`, 'ok');
@@ -648,8 +635,7 @@ area.addEventListener('mousemove', e => {
   }
   const { x, y } = pxCoord(e.clientX, e.clientY);
   if (x >= 0 && x < W && y >= 0 && y < H) {
-    const key   = `${x},${y}`;
-    const pixel = STATE[key];
+    const pixel = STATE[`${x},${y}`];
     const owner = pixel?.ownerName;
     coordTip.textContent   = owner ? `(${x},${y}) · ${owner}` : `(${x},${y})`;
     coordTip.style.display = 'block';
@@ -689,10 +675,10 @@ area.addEventListener('touchstart', e => {
   if (e.target.closest('.zoom-btns')) return;
   e.preventDefault();
   if (e.touches.length === 1) {
-    tStart  = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    tMoved  = false;
-    panSX   = e.touches[0].clientX - ox;
-    panSY   = e.touches[0].clientY - oy;
+    tStart    = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    tMoved    = false;
+    panSX     = e.touches[0].clientX - ox;
+    panSY     = e.touches[0].clientY - oy;
     lastPinch = 0;
   } else if (e.touches.length === 2) {
     lastPinch = pinchDist(e.touches);
@@ -702,7 +688,7 @@ area.addEventListener('touchstart', e => {
 area.addEventListener('touchmove', e => {
   e.preventDefault();
   if (e.touches.length === 2) {
-    const d  = pinchDist(e.touches);
+    const d = pinchDist(e.touches);
     if (lastPinch) {
       const r  = area.getBoundingClientRect();
       const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
@@ -740,7 +726,6 @@ function pinchDist(t) {
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 function buildPalette() {
-  // remove old swatches (keep the label)
   colorBar.querySelectorAll('.swatch').forEach(s => s.remove());
   PALETTE.forEach(hex => {
     const sw = document.createElement('div');
@@ -773,7 +758,7 @@ function startTimer() {
     if (ms <= 0) {
       timerEl.textContent = 'Expired';
       timerEl.className   = 'pill-val r';
-      showToast('Session expired — pixel balance unchanged. Use /pixel-place again.', 'error', 0);
+      showToast('Session expired — pixel balance unchanged. Start a new session.', 'error', 0);
       btnSave.disabled = true;
       return;
     }
@@ -815,7 +800,18 @@ btnSave.addEventListener('click', async () => {
 
   try {
     await patchGist(gistId, 'pixel-session.json', { ...SESSION, placements, status: 'submitted' });
-    doneScreen.style.display = 'flex';
+
+    if (webMode && window.parent !== window) {
+      // ── Web app mode ──────────────────────────────────────────────────
+      // Notify the parent canvas-app.html to handle submission via Vercel API
+      window.parent.postMessage({ type: 'canvas-done', gistId }, '*');
+      // Show a brief success message while parent handles things
+      doneScreen.style.display = 'flex';
+    } else {
+      // ── Discord mode ──────────────────────────────────────────────────
+      // Show done screen — user goes back to Discord to hit Submit Pixels
+      doneScreen.style.display = 'flex';
+    }
   } catch (e) {
     console.error(e);
     showToast('Save failed: ' + e.message, 'error');
@@ -833,7 +829,6 @@ function showToast(msg, type = '', dur = 2800) {
   if (dur > 0) toastTmr = setTimeout(() => toast.classList.remove('show'), dur);
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 function setLoad(t) { document.getElementById('loadText').textContent = t; }
 </script>
 </body>
