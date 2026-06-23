@@ -463,6 +463,9 @@ const doneScreen = document.getElementById('doneScreen');
   const p = new URLSearchParams(location.search);
   gistId  = p.get('gist');
 
+  const webMode  = p.get('webMode') === '1';
+  const webAddr  = p.get('address') || null;
+
   if (!gistId) {
     setLoad('No session found.');
     showToast('Use /pixel-place in Discord to get a link.', 'error', 0);
