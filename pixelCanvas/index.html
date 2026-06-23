@@ -3,30 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DDAO Pixel Canvas</title>
+<title>BASIC x DONKEY — Pixel Canvas</title>
 <style>
   :root {
-    --bg:       #0d0d14;
-    --surface:  #14141f;
-    --border:   #1e1e30;
-    --purple:   #7b2fbe;
-    --purplhi:  #a855f7;
-    --cyan:     #22d3ee;
-    --text:     #e2e2f0;
-    --muted:    #6b6b8a;
-    --red:      #ef4444;
-    --green:    #22c55e;
-    --orange:   #f97316;
-    --mono:     'JetBrains Mono', 'Fira Code', monospace;
-    --sans:     'Inter', system-ui, sans-serif;
+    --yellow:   #FFE033;
+    --yellow2:  #FFB800;
+    --black:    #0E0E0E;
+    --offblack: #181818;
+    --panel:    #1E1E1E;
+    --border:   #2E2E2E;
+    --border2:  #3D3D3D;
+    --white:    #F5F5F0;
+    --muted:    #6A6A6A;
+    --green:    #3DDB6F;
+    --red:      #FF4D4D;
+    --orange:   #FF8C00;
+    --blue:     #5b9fff;
+    --pixel:    'Press Start 2P', monospace;
+    --mono:     'DM Mono', monospace;
+    --sans:     'DM Sans', system-ui, sans-serif;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   html, body {
     height: 100%;
-    background: var(--bg);
-    color: var(--text);
+    background: var(--black);
+    color: var(--white);
     font-family: var(--sans);
     overflow: hidden;
     touch-action: none;
@@ -44,37 +47,37 @@
   .top-bar {
     flex-shrink: 0;
     height: 52px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
+    background: var(--yellow);
+    border-bottom: 3px solid var(--black);
     display: flex;
     align-items: center;
     padding: 0 12px;
     gap: 10px;
     z-index: 10;
+    position: relative;
+    overflow: hidden;
   }
 
-  .logo-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--purplhi);
-    box-shadow: 0 0 8px var(--purplhi);
-    flex-shrink: 0;
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50%      { opacity:.4; transform:scale(.8); }
+  .top-bar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 8px 8px;
+    pointer-events: none;
   }
 
   .top-title {
-    font-family: var(--mono);
-    font-size: 12px;
-    letter-spacing: .12em;
-    color: var(--muted);
-    text-transform: uppercase;
+    font-family: var(--pixel);
+    font-size: 8px;
+    color: var(--black);
+    letter-spacing: .06em;
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
   }
-  .top-title b { color: var(--purplhi); font-weight: 600; }
 
   .top-spacer { flex: 1; }
 
@@ -82,18 +85,19 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 4px 9px;
-    font-family: var(--mono);
-    font-size: 11px;
+    background: var(--black);
+    padding: 5px 9px;
+    font-family: var(--pixel);
+    font-size: 7px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    color: var(--white);
   }
-  .pill-val { font-weight: 700; }
-  .pill-val.p { color: var(--purplhi); }
-  .pill-val.c { color: var(--cyan); }
-  .pill-val.r { color: var(--red); animation: blink 1s step-end infinite; }
+
+  .pill-val        { font-weight: 700; color: var(--yellow); }
+  .pill-val.placed { color: var(--white); }
+  .pill-val.r      { color: var(--red); animation: blink 1s step-end infinite; }
   @keyframes blink { 50% { opacity:.3; } }
 
   /* ─── Canvas area ─────────────────────────────────────────────────── */
@@ -101,7 +105,7 @@
     flex: 1;
     position: relative;
     overflow: hidden;
-    background: #0a0a10;
+    background: var(--offblack);
     cursor: crosshair;
   }
 
@@ -116,13 +120,12 @@
   .coord-tip {
     position: absolute;
     top: 8px; right: 8px;
-    background: rgba(13,13,20,.9);
-    border: 1px solid var(--purple);
-    border-radius: 4px;
+    background: var(--black);
+    border: 1px solid var(--yellow);
     padding: 3px 8px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--cyan);
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--yellow);
     pointer-events: none;
     display: none;
     z-index: 5;
@@ -138,12 +141,12 @@
 
   .zoom-btn {
     width: 32px; height: 32px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: rgba(20,20,31,.88);
-    backdrop-filter: blur(6px);
-    color: var(--text);
-    font-size: 18px;
+    border: 2px solid var(--border2);
+    background: rgba(14,14,14,.9);
+    backdrop-filter: blur(4px);
+    color: var(--white);
+    font-family: var(--pixel);
+    font-size: 14px;
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -155,8 +158,8 @@
   /* ─── Color bar ───────────────────────────────────────────────────── */
   .color-bar {
     flex-shrink: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    background: var(--panel);
+    border-top: 2px solid var(--border);
     padding: 8px 10px;
     display: flex;
     align-items: center;
@@ -168,30 +171,29 @@
   .color-bar::-webkit-scrollbar { display: none; }
 
   .color-label {
-    font-size: 9px;
-    font-family: var(--mono);
+    font-family: var(--pixel);
+    font-size: 6px;
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: .08em;
+    letter-spacing: .1em;
     flex-shrink: 0;
   }
 
   .swatch {
     width: 28px; height: 28px;
-    border-radius: 5px;
     flex-shrink: 0;
     cursor: pointer;
     border: 2px solid transparent;
     transition: transform .1s, border-color .1s;
   }
   .swatch:active   { transform: scale(.9); }
-  .swatch.selected { border-color: #fff; box-shadow: 0 0 0 1px var(--purplhi); }
+  .swatch.selected { border-color: var(--yellow); }
 
   /* ─── Action bar ──────────────────────────────────────────────────── */
   .action-bar {
     flex-shrink: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
+    background: var(--panel);
+    border-top: 3px solid var(--black);
     padding: 10px 12px;
     display: flex;
     align-items: center;
@@ -200,66 +202,61 @@
 
   .sel-color {
     width: 38px; height: 38px;
-    border-radius: 8px;
-    border: 2px solid var(--border);
+    border: 2px solid var(--border2);
     flex-shrink: 0;
   }
 
   .undo-btn {
     height: 38px;
     padding: 0 14px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
+    border: 2px solid var(--border2);
     background: transparent;
     color: var(--muted);
-    font-size: 13px;
-    font-family: var(--sans);
+    font-family: var(--pixel);
+    font-size: 7px;
     cursor: pointer;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 5px;
+    letter-spacing: .06em;
   }
   .undo-btn:active:not(:disabled) { opacity: .6; }
   .undo-btn:disabled { opacity: .3; cursor: not-allowed; }
 
+  /* Save button — yellow brand color, impossible to miss */
   .save-btn {
     flex: 1;
     height: 44px;
-    border-radius: 10px;
     border: none;
-    background: linear-gradient(135deg, #16a34a, var(--green));
-    color: #fff;
-    font-size: 15px;
-    font-weight: 700;
-    font-family: var(--sans);
+    background: var(--yellow);
+    color: var(--black);
+    font-family: var(--pixel);
+    font-size: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 0 18px rgba(34,197,94,.35);
     transition: opacity .15s, transform .1s;
-    letter-spacing: .02em;
+    letter-spacing: .06em;
     min-width: 0;
   }
-  .save-btn:active:not(:disabled) { transform: scale(.97); }
+  .save-btn:hover:not(:disabled)   { background: var(--yellow2); }
+  .save-btn:active:not(:disabled)  { transform: scale(.97); }
   .save-btn:disabled {
-    background: rgba(255,255,255,.05);
-    border: 1px solid var(--border);
+    background: var(--border);
     color: var(--muted);
-    box-shadow: none;
     cursor: not-allowed;
   }
+  .save-btn.success { background: var(--green) !important; color: var(--black) !important; }
 
   .save-count {
-    background: rgba(255,255,255,.25);
-    border-radius: 10px;
-    padding: 1px 7px;
-    font-size: 12px;
-    font-weight: 700;
+    background: rgba(0,0,0,0.2);
+    padding: 2px 7px;
+    font-size: 7px;
   }
-  .save-btn:disabled .save-count { background: var(--border); color: var(--muted); }
+  .save-btn:disabled .save-count { background: var(--border2); color: var(--muted); }
 
   /* ─── Toast ───────────────────────────────────────────────────────── */
   .toast {
@@ -267,12 +264,14 @@
     bottom: 130px;
     left: 50%;
     transform: translateX(-50%) translateY(10px);
-    background: rgba(20,20,31,.96);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 13px;
-    color: var(--text);
+    background: var(--offblack);
+    border: 2px solid var(--border2);
+    border-left: 3px solid var(--yellow);
+    padding: 8px 14px;
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--white);
+    letter-spacing: .06em;
     z-index: 50;
     opacity: 0;
     transition: opacity .2s, transform .2s;
@@ -284,9 +283,9 @@
     text-overflow: ellipsis;
   }
   .toast.show  { opacity:1; transform:translateX(-50%) translateY(0); }
-  .toast.warn  { border-color:var(--orange); color:var(--orange); }
-  .toast.error { border-color:var(--red);    color:var(--red); }
-  .toast.ok    { border-color:var(--green);  color:var(--green); }
+  .toast.warn  { border-left-color: var(--orange); color: var(--orange); }
+  .toast.error { border-left-color: var(--red);    color: var(--red); }
+  .toast.ok    { border-left-color: var(--green);  color: var(--green); }
 
   /* ─── Screens ─────────────────────────────────────────────────────── */
   .screen {
@@ -297,52 +296,81 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 20px;
     text-align: center;
     padding: 24px;
-    background: var(--bg);
+    background: var(--black);
   }
 
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--purplhi);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
+  .pixel-loader {
+    display: grid;
+    grid-template-columns: repeat(5, 10px);
+    grid-template-rows: repeat(5, 10px);
+    gap: 3px;
   }
-  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .pixel-loader div {
+    background: var(--border);
+    animation: pixelblink 1s steps(1) infinite;
+  }
+  .pixel-loader div:nth-child(odd)  { animation-delay: 0s; }
+  .pixel-loader div:nth-child(even) { animation-delay: .5s; }
+
+  @keyframes pixelblink {
+    0%, 49%  { background: var(--yellow); }
+    50%, 100% { background: var(--border); }
+  }
 
   .screen-text {
+    font-family: var(--pixel);
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: .12em;
+  }
+
+  #doneScreen { background: rgba(14,14,14,.97); display: none; }
+
+  .done-icon  { font-size: 52px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
+
+  .done-title {
+    font-family: var(--pixel);
+    font-size: 12px;
+    color: var(--yellow);
+    line-height: 1.8;
+    letter-spacing: .06em;
+  }
+
+  .done-sub {
     font-family: var(--mono);
     font-size: 13px;
     color: var(--muted);
-    letter-spacing: .1em;
+    max-width: 300px;
+    line-height: 1.7;
   }
-
-  #doneScreen { background: rgba(13,13,20,.97); display: none; }
-
-  .done-icon  { font-size: 58px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
-  @keyframes pop { from{transform:scale(0);opacity:0} to{transform:scale(1);opacity:1} }
-
-  .done-title { font-size: 24px; font-weight: 700; color: var(--green); }
-  .done-sub   { font-size: 14px; color: var(--muted); max-width:320px; line-height:1.7; }
-  .done-sub b { color: var(--text); }
+  .done-sub b { color: var(--white); }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <!-- Load screen -->
 <div class="screen" id="loadScreen">
-  <div class="spinner"></div>
+  <div class="pixel-loader">
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
   <div class="screen-text" id="loadText">Loading session…</div>
 </div>
 
-<!-- Done screen — message changes based on Discord vs web mode -->
+<!-- Done screen -->
 <div class="screen" id="doneScreen">
   <div class="done-icon">✅</div>
-  <div class="done-title">Pixels saved!</div>
+  <div class="done-title">Pixels<br>Saved!</div>
   <div class="done-sub" id="doneSubText">
     Go back to Discord and tap <b>Submit Pixels</b> to place them on the canvas.
   </div>
@@ -355,16 +383,13 @@
 <div class="shell">
 
   <div class="top-bar">
-    <div class="logo-dot"></div>
-    <div class="top-title">DDAO <b>Canvas</b></div>
+    <div class="top-title">B×D CANVAS</div>
     <div class="top-spacer"></div>
     <div class="pill">
-      <span style="color:var(--muted)">Left</span>
-      <span class="pill-val p" id="creditsLeft">—</span>
+      Left <span class="pill-val" id="creditsLeft">—</span>
     </div>
     <div class="pill">
-      <span style="color:var(--muted)">Placed</span>
-      <span class="pill-val c" id="placedCount">0</span>
+      Placed <span class="pill-val placed" id="placedCount">0</span>
     </div>
     <div class="pill">
       ⏱ <span class="pill-val" id="timerVal">—</span>
@@ -377,7 +402,7 @@
     <div class="zoom-btns">
       <button class="zoom-btn" id="zIn">+</button>
       <button class="zoom-btn" id="zOut">−</button>
-      <button class="zoom-btn" id="zReset" style="font-size:13px">⊡</button>
+      <button class="zoom-btn" id="zReset" style="font-size:11px">⊡</button>
     </div>
   </div>
 
@@ -389,7 +414,7 @@
     <div class="sel-color" id="selColor"></div>
     <button class="undo-btn" id="btnUndo" disabled>↩ Undo</button>
     <button class="save-btn" id="btnSave" disabled>
-      ✅ Save &amp; Return
+      Save &amp; Return
       <span class="save-count" id="saveCount">0</span>
     </button>
   </div>
@@ -416,10 +441,8 @@ let credits    = 0;
 let gistId     = null;
 let expiresAt  = null;
 let W = 64, H = 64;
-
-// Web mode — true when opened from the canvas-app web page inside an iframe
-let webMode  = false;
-let webAddr  = null;
+let webMode    = false;
+let webAddr    = null;
 
 const PS = 8;
 let scale = 1, ox = 0, oy = 0;
@@ -451,7 +474,6 @@ const doneSubText = document.getElementById('doneSubText');
   webMode = p.get('webMode') === '1';
   webAddr = p.get('address') || null;
 
-  // Update done screen message for web mode
   if (webMode) {
     doneSubText.innerHTML = 'Your pixels have been submitted to the canvas!';
   }
@@ -490,7 +512,7 @@ const doneSubText = document.getElementById('doneSubText');
 
     loadScreen.style.display = 'none';
     requestAnimationFrame(() => fitView());
-    showToast(`${credits} pixel${credits !== 1 ? 's' : ''} available — tap to place!`, 'ok');
+    showToast(`${credits} pixel${credits !== 1 ? 's' : ''} — tap to place!`, 'ok');
   } catch (e) {
     console.error(e);
     setLoad('Failed to load: ' + e.message);
@@ -553,12 +575,12 @@ function draw() {
       ctx.fillRect(x * PS, y * PS, PS, PS);
 
       if (st?.protectedUntil > now && !pn) {
-        ctx.fillStyle = 'rgba(100,180,255,0.3)';
+        ctx.fillStyle = 'rgba(91,159,255,0.28)';
         ctx.fillRect(x * PS, y * PS, PS, PS);
       }
 
       if (pn) {
-        ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+        ctx.strokeStyle = 'rgba(255,224,51,0.8)';
         ctx.lineWidth   = 1.5;
         ctx.strokeRect(x * PS + 1, y * PS + 1, PS - 2, PS - 2);
       }
@@ -575,7 +597,7 @@ function draw() {
   }
 }
 
-// ── Coord from pointer ─────────────────────────────────────────────────────────
+// ── Coords ─────────────────────────────────────────────────────────────────────
 function pxCoord(cx, cy) {
   const r = area.getBoundingClientRect();
   return {
@@ -606,7 +628,7 @@ function place(cx, cy) {
   }
 
   if (placements.length >= credits) {
-    showToast('No credits left — save or undo a pixel.', 'warn');
+    showToast('No credits left — save or undo.', 'warn');
     return;
   }
 
@@ -618,8 +640,7 @@ function place(cx, cy) {
 // ── Mouse ──────────────────────────────────────────────────────────────────────
 area.addEventListener('mousedown', e => {
   if (e.target.closest('.zoom-btns')) return;
-  panning  = true;
-  panMoved = false;
+  panning  = true; panMoved = false;
   panSX    = e.clientX - ox;
   panSY    = e.clientY - oy;
 });
@@ -664,8 +685,7 @@ area.addEventListener('wheel', e => {
   const ns = Math.max(.4, Math.min(12, scale * d));
   ox = mx - (mx - ox) * (ns / scale);
   oy = my - (my - oy) * (ns / scale);
-  scale = ns;
-  applyXY();
+  scale = ns; applyXY();
 }, { passive: false });
 
 // ── Touch ──────────────────────────────────────────────────────────────────────
@@ -696,8 +716,7 @@ area.addEventListener('touchmove', e => {
       const ns = Math.max(.4, Math.min(12, scale * d / lastPinch));
       ox = mx - (mx - ox) * (ns / scale);
       oy = my - (my - oy) * (ns / scale);
-      scale = ns;
-      applyXY();
+      scale = ns; applyXY();
     }
     lastPinch = d;
   } else if (e.touches.length === 1 && tStart) {
@@ -758,28 +777,27 @@ function startTimer() {
     if (ms <= 0) {
       timerEl.textContent = 'Expired';
       timerEl.className   = 'pill-val r';
-      showToast('Session expired — pixel balance unchanged. Start a new session.', 'error', 0);
+      showToast('Session expired — pixel balance unchanged.', 'error', 0);
       btnSave.disabled = true;
       return;
     }
     const m = Math.floor(ms / 60000);
     const s = Math.floor((ms % 60000) / 1000);
     timerEl.textContent = `${m}:${String(s).padStart(2,'0')}`;
-    timerEl.className   = `pill-val ${m < 5 ? 'r' : 'c'}`;
+    timerEl.className   = m < 5 ? 'pill-val r' : 'pill-val';
     setTimeout(tick, 1000);
   }
   tick();
 }
 
-// ── Zoom buttons ───────────────────────────────────────────────────────────────
+// ── Zoom ───────────────────────────────────────────────────────────────────────
 function doZoom(f) {
   const r  = area.getBoundingClientRect();
   const cx = r.width / 2, cy = r.height / 2;
   const ns = Math.max(.4, Math.min(12, scale * f));
   ox = cx - (cx - ox) * (ns / scale);
   oy = cy - (cy - oy) * (ns / scale);
-  scale = ns;
-  applyXY();
+  scale = ns; applyXY();
 }
 document.getElementById('zIn').addEventListener('click',    e => { e.stopPropagation(); doZoom(1.3); });
 document.getElementById('zOut').addEventListener('click',   e => { e.stopPropagation(); doZoom(0.77); });
@@ -802,21 +820,18 @@ btnSave.addEventListener('click', async () => {
     await patchGist(gistId, 'pixel-session.json', { ...SESSION, placements, status: 'submitted' });
 
     if (webMode && window.parent !== window) {
-      // ── Web app mode ──────────────────────────────────────────────────
-      // Notify the parent canvas-app.html to handle submission via Vercel API
+      // Web app mode — notify parent canvas-app to handle submission
       window.parent.postMessage({ type: 'canvas-done', gistId }, '*');
-      // Show a brief success message while parent handles things
       doneScreen.style.display = 'flex';
     } else {
-      // ── Discord mode ──────────────────────────────────────────────────
-      // Show done screen — user goes back to Discord to hit Submit Pixels
+      // Discord mode — show done screen, user goes back to Discord
       doneScreen.style.display = 'flex';
     }
   } catch (e) {
     console.error(e);
     showToast('Save failed: ' + e.message, 'error');
     btnSave.disabled  = false;
-    btnSave.innerHTML = `✅ Save &amp; Return <span class="save-count">${placements.length}</span>`;
+    btnSave.innerHTML = `Save &amp; Return <span class="save-count">${placements.length}</span>`;
   }
 });
 
