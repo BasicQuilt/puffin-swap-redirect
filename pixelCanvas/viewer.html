@@ -3,28 +3,34 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DDAO Pixel Canvas — Live View</title>
+<title>BASIC × DONKEY — Pixel Canvas Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:       #0d0d14;
-    --surface:  #14141f;
-    --border:   #1e1e30;
-    --purple:   #7b2fbe;
-    --purple-hi:#a855f7;
-    --cyan:     #22d3ee;
-    --text:     #e2e2f0;
-    --muted:    #6b6b8a;
-    --green:    #22c55e;
-    --radius:   6px;
-    --mono:     'JetBrains Mono', 'Fira Code', monospace;
-    --sans:     'Inter', system-ui, sans-serif;
+    --yellow:   #FFE033;
+    --yellow2:  #FFB800;
+    --black:    #0E0E0E;
+    --offblack: #181818;
+    --panel:    #1E1E1E;
+    --panel2:   #252525;
+    --border:   #2E2E2E;
+    --border2:  #3D3D3D;
+    --white:    #F5F5F0;
+    --muted:    #6A6A6A;
+    --green:    #3DDB6F;
+    --red:      #FF4D4D;
+    --blue:     #5b9fff;
+    --pixel:    'Press Start 2P', monospace;
+    --mono:     'DM Mono', monospace;
+    --sans:     'DM Sans', system-ui, sans-serif;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--black);
+    color: var(--white);
     font-family: var(--sans);
     min-height: 100vh;
     display: flex;
@@ -37,10 +43,9 @@
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.35;
+      linear-gradient(rgba(255,224,51,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,224,51,0.04) 1px, transparent 1px);
+    background-size: 16px 16px;
     pointer-events: none;
     z-index: 0;
   }
@@ -50,90 +55,101 @@
     z-index: 1;
     width: 100%;
     max-width: 700px;
-    padding: 24px 16px 48px;
+    padding: 0 0 64px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: 2px;
   }
 
-  /* Header */
-  header {
+  /* ── Header ── */
+  .header {
     width: 100%;
+    background: var(--yellow);
+    padding: 20px 20px 18px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    border-bottom: 4px solid var(--black);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 2px;
   }
 
-  .logo {
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 8px 8px;
+    pointer-events: none;
+  }
+
+  .header-left {
     display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .logo-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--purple-hi);
-    box-shadow: 0 0 12px var(--purple-hi);
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%       { opacity: 0.5; transform: scale(0.85); }
-  }
-
-  .logo-text {
-    font-family: var(--mono);
-    font-size: 13px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-  }
-
-  .logo-text span { color: var(--purple-hi); }
-
-  /* Refresh badge */
-  .refresh-badge {
-    display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 6px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--muted);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 10px;
+    position: relative;
+    z-index: 1;
   }
 
-  .refresh-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
+  .collab-label {
+    font-family: var(--pixel);
+    font-size: 6px;
+    color: rgba(0,0,0,0.45);
+    letter-spacing: .1em;
+  }
+
+  .header h1 {
+    font-family: var(--pixel);
+    font-size: 10px;
+    color: var(--black);
+    letter-spacing: .04em;
+    line-height: 1.6;
+  }
+
+  /* Live badge */
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: var(--black);
+    padding: 8px 12px;
+    position: relative;
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
     background: var(--green);
-    box-shadow: 0 0 6px var(--green);
+    flex-shrink: 0;
+    animation: pixblink 1.4s steps(1) infinite;
   }
 
-  .refresh-dot.loading {
-    background: var(--cyan);
-    box-shadow: 0 0 6px var(--cyan);
-    animation: blink 0.6s step-end infinite;
+  @keyframes pixblink {
+    0%, 60% { opacity: 1; }
+    61%, 100% { opacity: 0; }
   }
 
-  @keyframes blink { 50% { opacity: 0; } }
+  .live-dot.loading { background: var(--yellow); animation: none; opacity: 1; }
 
-  /* Stats bar */
+  .live-text {
+    font-family: var(--pixel);
+    font-size: 6px;
+    color: var(--white);
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+
+  /* ── Stats bar ── */
   .stats-bar {
     width: 100%;
     display: flex;
-    align-items: center;
-    gap: 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
+    background: var(--panel);
+    border-bottom: 2px solid var(--border);
   }
 
   .stat {
@@ -141,37 +157,34 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding: 10px 8px;
-    border-right: 1px solid var(--border);
+    gap: 5px;
+    padding: 12px 8px;
+    border-right: 2px solid var(--border);
   }
-
   .stat:last-child { border-right: none; }
 
   .stat-label {
-    font-size: 9px;
-    letter-spacing: 0.1em;
+    font-family: var(--pixel);
+    font-size: 5px;
+    letter-spacing: .1em;
     text-transform: uppercase;
     color: var(--muted);
-    font-family: var(--mono);
   }
 
   .stat-value {
-    font-size: 15px;
-    font-weight: 700;
-    font-family: var(--mono);
-    color: var(--text);
+    font-family: var(--pixel);
+    font-size: 13px;
+    color: var(--white);
+    line-height: 1;
   }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.green  { color: var(--green); }
 
-  .stat-value.purple { color: var(--purple-hi); }
-  .stat-value.cyan   { color: var(--cyan); }
-
-  /* Canvas */
+  /* ── Canvas wrap ── */
   .canvas-wrap {
     width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
+    background: var(--offblack);
+    border-bottom: 2px solid var(--border);
     overflow: hidden;
     position: relative;
   }
@@ -184,145 +197,161 @@
     cursor: crosshair;
   }
 
-  /* Coord tooltip */
+  /* Coord tip */
   .coord-tip {
     position: absolute;
-    background: rgba(13,13,20,0.92);
-    border: 1px solid var(--purple);
-    border-radius: 4px;
+    background: var(--black);
+    border: 1px solid var(--yellow);
     padding: 3px 8px;
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--cyan);
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--yellow);
     pointer-events: none;
     display: none;
     white-space: nowrap;
     z-index: 10;
   }
 
-  /* Pixel info popup */
+  /* Pixel popup */
   .pixel-popup {
     position: absolute;
-    background: rgba(13,13,20,0.96);
-    border: 1px solid var(--purple);
-    border-radius: var(--radius);
-    padding: 8px 12px;
+    background: var(--offblack);
+    border: 2px solid var(--border2);
+    border-top: 2px solid var(--yellow);
+    padding: 10px 12px;
     font-family: var(--mono);
     font-size: 11px;
-    color: var(--text);
+    color: var(--white);
     pointer-events: none;
     display: none;
     z-index: 20;
-    min-width: 140px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    min-width: 150px;
   }
 
   .pixel-popup-color {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 4px;
+    gap: 7px;
+    margin-bottom: 7px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
   }
 
   .pixel-popup-dot {
-    width: 12px; height: 12px;
-    border-radius: 2px;
-    border: 1px solid rgba(255,255,255,0.2);
+    width: 14px; height: 14px;
+    border: 1px solid var(--border2);
     flex-shrink: 0;
   }
 
-  .pixel-popup-row {
-    color: var(--muted);
-    font-size: 10px;
-    line-height: 1.6;
+  .pixel-popup-hex {
+    font-family: var(--pixel);
+    font-size: 8px;
+    color: var(--white);
   }
 
-  .pixel-popup-row span { color: var(--text); }
+  .pixel-popup-row {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.9;
+  }
+  .pixel-popup-row span { color: var(--white); }
+  .pixel-popup-row .prot { color: var(--blue); }
 
-  /* Loading */
+  /* ── Loading ── */
   #loadScreen {
     position: fixed;
     inset: 0;
-    background: var(--bg);
+    background: var(--black);
     z-index: 100;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 24px;
   }
 
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--purple-hi);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
+  .pixel-loader {
+    display: grid;
+    grid-template-columns: repeat(5, 10px);
+    grid-template-rows: repeat(5, 10px);
+    gap: 3px;
   }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .pixel-loader div {
+    animation: pixelblink 1s steps(1) infinite;
+  }
+  .pixel-loader div:nth-child(odd)  { animation-delay: 0s; }
+  .pixel-loader div:nth-child(even) { animation-delay: .5s; }
+  @keyframes pixelblink {
+    0%, 49% { background: var(--yellow); }
+    50%, 100% { background: var(--border); }
+  }
 
   .load-text {
-    font-family: var(--mono);
-    font-size: 13px;
+    font-family: var(--pixel);
+    font-size: 8px;
     color: var(--muted);
-    letter-spacing: 0.1em;
+    letter-spacing: .12em;
   }
 
-  /* Footer */
+  /* ── Footer ── */
   .footer {
-    font-size: 11px;
-    color: var(--muted);
     font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
     text-align: center;
-    line-height: 1.7;
+    line-height: 2;
+    padding: 16px;
   }
 
   .footer a {
-    color: var(--purple-hi);
+    color: var(--yellow);
     text-decoration: none;
   }
-
   .footer a:hover { text-decoration: underline; }
 </style>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div id="loadScreen">
-  <div class="spinner"></div>
+  <div class="pixel-loader">
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
   <div class="load-text">Loading canvas…</div>
 </div>
 
 <div class="page">
 
-  <header>
-    <div class="logo">
-      <div class="logo-dot"></div>
-      <div class="logo-text">DDAO <span>Pixel Canvas</span></div>
+  <div class="header">
+    <div class="header-left">
+      <div class="collab-label">JOINT VENTURE · LIVE VIEW</div>
+      <h1>BASIC × DONKEY<br>PIXEL CANVAS</h1>
     </div>
-    <div class="refresh-badge">
-      <div class="refresh-dot" id="refreshDot"></div>
-      <span id="refreshLabel">Refreshes in 30s</span>
+    <div class="live-badge">
+      <div class="live-dot" id="liveDot"></div>
+      <div class="live-text" id="liveText">LIVE</div>
     </div>
-  </header>
+  </div>
 
   <div class="stats-bar">
     <div class="stat">
-      <div class="stat-label">Pixels Placed</div>
-      <div class="stat-value purple" id="statPlaced">—</div>
+      <div class="stat-label">Placed</div>
+      <div class="stat-value yellow" id="statPlaced">—</div>
     </div>
     <div class="stat">
       <div class="stat-label">Canvas</div>
       <div class="stat-value" id="statSize">—</div>
     </div>
     <div class="stat">
-      <div class="stat-label">% Filled</div>
-      <div class="stat-value cyan" id="statPct">—</div>
+      <div class="stat-label">Filled</div>
+      <div class="stat-value green" id="statPct">—</div>
     </div>
     <div class="stat">
-      <div class="stat-label">Last Updated</div>
+      <div class="stat-label">Updated</div>
       <div class="stat-value" id="statUpdated">—</div>
     </div>
   </div>
@@ -333,56 +362,48 @@
     <div class="pixel-popup" id="pixelPopup">
       <div class="pixel-popup-color">
         <div class="pixel-popup-dot" id="popupDot"></div>
-        <span id="popupColor">#FFFFFF</span>
+        <span class="pixel-popup-hex" id="popupColor">#FFFFFF</span>
       </div>
       <div class="pixel-popup-row">Coords: <span id="popupCoords">—</span></div>
       <div class="pixel-popup-row">Owner: <span id="popupOwner">—</span></div>
-      <div class="pixel-popup-row" id="popupProtRow">Protected: <span id="popupProt">—</span></div>
+      <div class="pixel-popup-row">Protected: <span id="popupProt" class="prot">—</span></div>
     </div>
   </div>
 
   <div class="footer">
-    Hover to inspect · Click to pin pixel info<br>
-    Canvas updates every 30 seconds · Place pixels in Discord
+    Hover to inspect · Click to pin pixel info · Canvas auto-refreshes every 30s<br>
+    Buy pixels on <a href="https://basicquilt.github.io/puffin-swap-redirect/canvas/" target="_blank" rel="noopener">the web</a> or in the Basic &amp; Donkey Discord servers
   </div>
 
 </div>
 
 <script>
-// ── Config ─────────────────────────────────────────────────────────────────────
-// Replace with your actual canvas state Gist ID
-// You can find it in your pixel.db: SELECT value FROM canvas_meta WHERE key='canvas_state_gist_id';
 const CANVAS_STATE_GIST_ID = '65adc252cd7c38d8b03e74e268ea7340';
 const REFRESH_INTERVAL_MS  = 30000;
 const PIXEL_SIZE           = 8;
 
-// ── State ──────────────────────────────────────────────────────────────────────
 let CANVAS_STATE = {};
 let W = 64, H = 64;
 let pinnedPixel  = null;
-let refreshTimer = null;
 let countdown    = 30;
 
-// ── DOM ────────────────────────────────────────────────────────────────────────
 const canvas      = document.getElementById('pixelCanvas');
 const ctx         = canvas.getContext('2d');
 const loadScreen  = document.getElementById('loadScreen');
 const coordTip    = document.getElementById('coordTip');
 const pixelPopup  = document.getElementById('pixelPopup');
-const refreshDot  = document.getElementById('refreshDot');
-const refreshLabel = document.getElementById('refreshLabel');
+const liveDot     = document.getElementById('liveDot');
+const liveText    = document.getElementById('liveText');
 
-// ── Boot ───────────────────────────────────────────────────────────────────────
 (async () => {
   await loadCanvas();
   loadScreen.style.display = 'none';
   startRefreshCycle();
 })();
 
-// ── Load canvas state ──────────────────────────────────────────────────────────
 async function loadCanvas() {
-  refreshDot.classList.add('loading');
-  refreshLabel.textContent = 'Updating…';
+  liveDot.classList.add('loading');
+  liveText.textContent = 'UPDATING…';
 
   try {
     const res = await fetch(
@@ -408,10 +429,10 @@ async function loadCanvas() {
     console.error('Error loading canvas:', err);
   }
 
-  refreshDot.classList.remove('loading');
+  liveDot.classList.remove('loading');
+  liveText.textContent = 'LIVE';
 }
 
-// ── Draw ───────────────────────────────────────────────────────────────────────
 function drawCanvas() {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -427,16 +448,14 @@ function drawCanvas() {
       ctx.fillStyle = color;
       ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
 
-      // Protected shimmer
       if (pixel?.protectedUntil > now) {
-        ctx.fillStyle = 'rgba(100,180,255,0.3)';
+        ctx.fillStyle = 'rgba(91,159,255,0.28)';
         ctx.fillRect(x * PIXEL_SIZE, y * PIXEL_SIZE, PIXEL_SIZE, PIXEL_SIZE);
       }
     }
   }
 
-  // Subtle grid
-  ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.07)';
   ctx.lineWidth   = 0.5;
   for (let x = 0; x <= W; x++) {
     ctx.beginPath();
@@ -451,12 +470,11 @@ function drawCanvas() {
     ctx.stroke();
   }
 
-  // Redraw pinned pixel highlight
   if (pinnedPixel) highlightPixel(pinnedPixel.x, pinnedPixel.y);
 }
 
 function highlightPixel(x, y) {
-  ctx.strokeStyle = '#ffffff';
+  ctx.strokeStyle = '#FFE033';
   ctx.lineWidth   = 2;
   ctx.strokeRect(
     x * PIXEL_SIZE + 1,
@@ -466,7 +484,6 @@ function highlightPixel(x, y) {
   );
 }
 
-// ── Stats ──────────────────────────────────────────────────────────────────────
 function updateStats(state) {
   const placed  = Object.keys(state.pixels || {}).length;
   const total   = W * H;
@@ -481,24 +498,12 @@ function updateStats(state) {
   document.getElementById('statUpdated').textContent = updated;
 }
 
-// ── Refresh cycle ──────────────────────────────────────────────────────────────
 function startRefreshCycle() {
-  countdown = REFRESH_INTERVAL_MS / 1000;
-
-  const tick = setInterval(() => {
-    countdown--;
-    if (countdown > 0) {
-      refreshLabel.textContent = `Refreshes in ${countdown}s`;
-    } else {
-      clearInterval(tick);
-      loadCanvas().then(() => {
-        startRefreshCycle();
-      });
-    }
-  }, 1000);
+  setTimeout(() => {
+    loadCanvas().then(() => startRefreshCycle());
+  }, REFRESH_INTERVAL_MS);
 }
 
-// ── Canvas interaction ─────────────────────────────────────────────────────────
 function getCoords(e) {
   const rect   = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
@@ -520,43 +525,39 @@ function showPopup(x, y, clientX, clientY) {
     : 'No';
   const owner = pixel?.ownerName || (pixel?.color && pixel.color !== '#FFFFFF' ? 'Unknown' : 'Empty');
 
-  document.getElementById('popupDot').style.background    = color;
-  document.getElementById('popupColor').textContent       = color;
-  document.getElementById('popupCoords').textContent      = `(${x}, ${y})`;
-  document.getElementById('popupOwner').textContent       = owner;
-  document.getElementById('popupProt').textContent        = remaining;
+  document.getElementById('popupDot').style.background = color;
+  document.getElementById('popupColor').textContent    = color;
+  document.getElementById('popupCoords').textContent   = `(${x}, ${y})`;
+  document.getElementById('popupOwner').textContent    = owner;
+  document.getElementById('popupProt').textContent     = remaining;
 
   const wrap   = document.getElementById('canvasWrap');
   const wRect  = wrap.getBoundingClientRect();
   const popupW = 160;
-  const popupH = 95;
-  let   left   = clientX - wRect.left + 12;
-  let   top    = clientY - wRect.top  - popupH - 8;
-  if (left + popupW > wRect.width)  left = clientX - wRect.left - popupW - 8;
-  if (top < 0)                      top  = clientY - wRect.top  + 16;
+  const popupH = 100;
+  let left = clientX - wRect.left + 12;
+  let top  = clientY - wRect.top  - popupH - 8;
+  if (left + popupW > wRect.width) left = clientX - wRect.left - popupW - 8;
+  if (top < 0) top = clientY - wRect.top + 16;
 
   pixelPopup.style.left    = `${left}px`;
   pixelPopup.style.top     = `${top}px`;
   pixelPopup.style.display = 'block';
 }
 
-// Hover — show coord tip + popup
 canvas.addEventListener('mousemove', (e) => {
-  if (pinnedPixel) return; // don't move popup when pinned
+  if (pinnedPixel) return;
   const { x, y } = getCoords(e);
   if (x < 0 || x >= W || y < 0 || y >= H) {
-    coordTip.style.display  = 'none';
+    coordTip.style.display   = 'none';
     pixelPopup.style.display = 'none';
     return;
   }
-
-  // Coord tip
-  const rect  = canvas.getBoundingClientRect();
+  const rect = canvas.getBoundingClientRect();
   coordTip.textContent   = `(${x}, ${y})`;
   coordTip.style.display = 'block';
   coordTip.style.left    = `${e.clientX - rect.left + 12}px`;
-  coordTip.style.top     = `${Math.max(e.clientY - rect.top - 24, 4)}px`;
-
+  coordTip.style.top     = `${Math.max(e.clientY - rect.top - 28, 4)}px`;
   showPopup(x, y, e.clientX, e.clientY);
 });
 
@@ -566,31 +567,25 @@ canvas.addEventListener('mouseleave', () => {
   pixelPopup.style.display = 'none';
 });
 
-// Click — pin/unpin pixel info
 canvas.addEventListener('click', (e) => {
   const { x, y } = getCoords(e);
   if (x < 0 || x >= W || y < 0 || y >= H) return;
-
   if (pinnedPixel && pinnedPixel.x === x && pinnedPixel.y === y) {
-    // Unpin
     pinnedPixel = null;
     pixelPopup.style.display = 'none';
     drawCanvas();
   } else {
-    // Pin
     pinnedPixel = { x, y };
     drawCanvas();
     showPopup(x, y, e.clientX, e.clientY);
   }
 });
 
-// Touch support
 canvas.addEventListener('touchend', (e) => {
   e.preventDefault();
   const touch = e.changedTouches[0];
   const { x, y } = getCoords(touch);
   if (x < 0 || x >= W || y < 0 || y >= H) return;
-
   if (pinnedPixel && pinnedPixel.x === x && pinnedPixel.y === y) {
     pinnedPixel = null;
     pixelPopup.style.display = 'none';
