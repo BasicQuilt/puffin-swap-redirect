@@ -3,57 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DDAO Pixel Canvas</title>
+<title>BASIC x DONKEY — Pixel Canvas</title>
 
 <script>var global = window;</script>
 <script src="vendor/vendor-bundle.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 
 <style>
   :root {
-    --bg:      #0d0d14;
-    --surface: #14141f;
-    --surface2:#1a1a28;
-    --border:  #1e1e30;
-    --border2: #2a2a45;
-    --purple:  #7b2fbe;
-    --purplhi: #a855f7;
-    --purpllo: #3d1760;
-    --cyan:    #22d3ee;
-    --text:    #e2e2f0;
-    --muted:   #6b6b8a;
-    --red:     #ef4444;
-    --green:   #22c55e;
-    --orange:  #f97316;
-    --mono:    'JetBrains Mono', monospace;
-    --sans:    'Inter', system-ui, sans-serif;
-    --radius:  10px;
+    --yellow:   #FFE033;
+    --yellow2:  #FFB800;
+    --black:    #0E0E0E;
+    --offblack: #181818;
+    --panel:    #1E1E1E;
+    --panel2:   #252525;
+    --border:   #2E2E2E;
+    --border2:  #3D3D3D;
+    --white:    #F5F5F0;
+    --muted:    #6A6A6A;
+    --green:    #3DDB6F;
+    --red:      #FF4D4D;
+    --orange:   #FF8C00;
+    --pixel:    'Press Start 2P', monospace;
+    --mono:     'DM Mono', monospace;
+    --sans:     'DM Sans', system-ui, sans-serif;
+    --radius:   0px;
+    --radius-sm: 2px;
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: var(--sans);
-    background: var(--bg);
-    color: var(--text);
+    background: var(--black);
+    color: var(--white);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 24px 16px 64px;
+    padding: 0 0 80px;
+    image-rendering: pixelated;
   }
 
+  /* ── Pixel grid bg ── */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(var(--border) 1px, transparent 1px),
-      linear-gradient(90deg, var(--border) 1px, transparent 1px);
-    background-size: 40px 40px;
-    opacity: 0.35;
+      linear-gradient(rgba(255,224,51,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,224,51,0.04) 1px, transparent 1px);
+    background-size: 16px 16px;
     pointer-events: none;
     z-index: 0;
   }
@@ -62,171 +64,250 @@
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 480px;
+    max-width: 460px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 2px;
   }
 
   /* ── Header ── */
   .header {
+    background: var(--yellow);
+    padding: 32px 20px 28px;
     text-align: center;
-    padding: 32px 0 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+    border-bottom: 4px solid var(--black);
+    position: relative;
+    overflow: hidden;
   }
 
-  .logo-ring {
-    width: 64px; height: 64px;
-    border-radius: 50%;
-    border: 1.5px solid var(--border2);
-    background: var(--surface);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28px;
-    box-shadow: 0 0 32px rgba(168,85,247,.2);
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+    background-size: 8px 8px;
+    pointer-events: none;
+  }
+
+  .collab-badge {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--black);
+    background: var(--black);
+    color: var(--yellow);
+    padding: 6px 14px;
+    letter-spacing: .1em;
+    position: relative;
+    z-index: 1;
   }
 
   .header h1 {
-    font-family: var(--mono);
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: .05em;
+    font-family: var(--pixel);
+    font-size: 13px;
+    color: var(--black);
+    line-height: 1.8;
+    letter-spacing: .04em;
+    position: relative;
+    z-index: 1;
   }
 
-  .header p { font-size: 13px; color: var(--muted); }
+  .header-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: rgba(0,0,0,0.55);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Viewer link ── */
+  .viewer-bar {
+    background: var(--offblack);
+    border-bottom: 2px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .viewer-bar span {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .viewer-link {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--yellow);
+    text-decoration: none;
+    background: rgba(255,224,51,0.08);
+    border: 1px solid rgba(255,224,51,0.3);
+    padding: 6px 10px;
+    transition: background .15s;
+    white-space: nowrap;
+  }
+  .viewer-link:hover { background: rgba(255,224,51,0.18); }
+
+  /* ── Status box ── */
+  .status-box {
+    padding: 10px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+    border-left: 3px solid;
+    display: none;
+    margin: 0 0 2px;
+  }
+  .status-box.show { display: block; }
+  .status-info    { background: rgba(255,224,51,.06); border-color: var(--yellow);  color: var(--yellow); }
+  .status-success { background: rgba(61,219,111,.06); border-color: var(--green);   color: var(--green); }
+  .status-error   { background: rgba(255,77,77,.06);  border-color: var(--red);     color: var(--red); }
+  .status-warn    { background: rgba(255,140,0,.06);  border-color: var(--orange);  color: var(--orange); }
 
   /* ── Cards ── */
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    position: relative;
+    transition: opacity .2s;
+  }
+
+  .card.disabled {
+    opacity: .38;
+    pointer-events: none;
+  }
+
+  /* pixel-corner accent on active cards */
+  .card:not(.disabled)::after {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px;
+    width: 8px; height: 8px;
+    background: var(--yellow);
   }
 
   .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--border);
+    background: var(--offblack);
   }
 
   .card-title {
-    font-family: var(--mono);
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .12em;
+    font-family: var(--pixel);
+    font-size: 7px;
     color: var(--muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
   }
 
-  .card-body { padding: 16px; }
+  .card-body { padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 
-  /* ── Status ── */
-  .status-box {
-    padding: 12px 16px;
-    border-radius: var(--radius);
-    border: 1px solid;
-    font-size: 13px;
-    line-height: 1.6;
-    display: none;
+  /* ── Tag ── */
+  .tag {
+    font-family: var(--pixel);
+    font-size: 6px;
+    padding: 4px 8px;
+    letter-spacing: .08em;
+    background: rgba(255,224,51,.1);
+    border: 1px solid rgba(255,224,51,.3);
+    color: var(--yellow);
   }
-  .status-box.show { display: block; }
-  .status-info    { background: rgba(168,85,247,.08);  border-color: rgba(168,85,247,.3);  color: var(--purplhi); }
-  .status-success { background: rgba(34,197,94,.08);   border-color: rgba(34,197,94,.3);   color: var(--green); }
-  .status-error   { background: rgba(239,68,68,.08);   border-color: rgba(239,68,68,.3);   color: var(--red); }
-  .status-warn    { background: rgba(249,115,22,.08);  border-color: rgba(249,115,22,.3);  color: var(--orange); }
+  .tag.green { background: rgba(61,219,111,.1); border-color: rgba(61,219,111,.4); color: var(--green); }
 
-  /* ── Wallet ── */
+  /* ── Wallet buttons ── */
   .wallet-row { display: flex; gap: 8px; }
 
   .wallet-btn {
     flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border2);
-    background: var(--surface2);
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 13px;
-    font-weight: 600;
+    padding: 12px 10px;
+    border: 2px solid var(--border2);
+    background: var(--panel2);
+    color: var(--white);
+    font-family: var(--pixel);
+    font-size: 7px;
     cursor: pointer;
-    transition: border-color .15s, color .15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
+    transition: border-color .15s, color .15s, background .15s;
+    letter-spacing: .06em;
   }
-  .wallet-btn:hover  { border-color: var(--purplhi); color: var(--purplhi); }
-  .wallet-btn.active { border-color: var(--green);   color: var(--green);   background: rgba(34,197,94,.06); }
+  .wallet-btn:hover  { border-color: var(--yellow); color: var(--yellow); background: rgba(255,224,51,.05); }
+  .wallet-btn.active { border-color: var(--green); color: var(--green); background: rgba(61,219,111,.05); }
 
-  /* ── Address ── */
+  /* ── Address box ── */
   .addr-box {
-    background: var(--surface2);
+    background: var(--offblack);
     border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
+    padding: 8px 12px;
     font-family: var(--mono);
-    font-size: 11px;
+    font-size: 10px;
     color: var(--muted);
     word-break: break-all;
-    line-height: 1.5;
+    line-height: 1.6;
     display: none;
   }
   .addr-box.show { display: block; }
-  .addr-box span { color: var(--text); }
+  .addr-box span { color: var(--white); }
 
-  /* ── Balance ── */
+  /* ── Balance grid ── */
   .balance-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .bal-cell {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
+    background: var(--offblack);
+    border: 2px solid var(--border);
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
   }
 
   .bal-label {
-    font-size: 10px;
-    font-family: var(--mono);
+    font-family: var(--pixel);
+    font-size: 6px;
     text-transform: uppercase;
-    letter-spacing: .08em;
+    letter-spacing: .1em;
     color: var(--muted);
   }
 
   .bal-value {
-    font-size: 22px;
-    font-weight: 700;
-    font-family: var(--mono);
-    color: var(--purplhi);
+    font-family: var(--pixel);
+    font-size: 16px;
+    color: var(--yellow);
     line-height: 1;
   }
-  .bal-value.cyan { color: var(--cyan); }
+  .bal-value.alt { color: var(--white); font-size: 13px; }
 
   /* ── Pack grid ── */
+  .pack-section-label {
+    font-family: var(--pixel);
+    font-size: 6px;
+    color: var(--muted);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+
   .pack-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
+    gap: 6px;
   }
 
   .pack-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 14px;
+    background: var(--offblack);
+    border: 2px solid var(--border);
+    padding: 12px;
     cursor: pointer;
     transition: border-color .15s, background .15s;
     display: flex;
@@ -234,171 +315,175 @@
     gap: 4px;
     position: relative;
   }
-  .pack-card:hover    { border-color: var(--purplhi); background: rgba(168,85,247,.06); }
-  .pack-card.selected { border-color: var(--purplhi); background: rgba(168,85,247,.1); }
-  .pack-card.disabled { opacity: .35; cursor: not-allowed; pointer-events: none; }
+  .pack-card:hover    { border-color: var(--yellow); background: rgba(255,224,51,.04); }
+  .pack-card.selected { border-color: var(--yellow); background: rgba(255,224,51,.09); }
+  .pack-card.selected::before {
+    content: '▶';
+    position: absolute;
+    top: 6px; right: 8px;
+    font-size: 8px;
+    color: var(--yellow);
+    font-family: var(--pixel);
+  }
 
-  .pack-pixels { font-size: 20px; font-weight: 700; font-family: var(--mono); color: #fff; }
-  .pack-label  { font-size: 11px; color: var(--muted); }
-  .pack-price  { font-size: 13px; font-weight: 600; font-family: var(--mono); color: var(--purplhi); margin-top: 4px; }
+  .pack-pixels {
+    font-family: var(--pixel);
+    font-size: 18px;
+    color: var(--white);
+    line-height: 1;
+  }
+
+  .pack-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .pack-price {
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--yellow);
+    margin-top: 4px;
+  }
 
   .pack-badge {
     position: absolute;
-    top: 8px; right: 8px;
-    background: var(--purpllo);
-    border: 1px solid var(--purple);
-    color: var(--purplhi);
-    font-size: 9px;
-    font-family: var(--mono);
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-weight: 700;
+    bottom: 8px; right: 8px;
+    background: var(--yellow);
+    color: var(--black);
+    font-family: var(--pixel);
+    font-size: 5px;
+    padding: 3px 5px;
     letter-spacing: .05em;
-  }
-
-  /* ── Disabled card overlay ── */
-  .card.disabled {
-    opacity: .4;
-    pointer-events: none;
   }
 
   /* ── Buttons ── */
   .btn {
     width: 100%;
     padding: 14px;
-    border-radius: var(--radius);
     border: none;
-    font-family: var(--sans);
-    font-size: 15px;
-    font-weight: 700;
+    font-family: var(--pixel);
+    font-size: 8px;
     cursor: pointer;
     transition: opacity .15s, transform .1s;
-    letter-spacing: .02em;
+    letter-spacing: .06em;
   }
   .btn:active:not(:disabled) { transform: scale(.98); }
-  .btn:disabled { opacity: .35; cursor: not-allowed; }
+  .btn:disabled { opacity: .3; cursor: not-allowed; }
 
   .btn-primary {
-    background: linear-gradient(135deg, var(--purple), var(--purplhi));
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(123,47,190,.35);
+    background: var(--yellow);
+    color: var(--black);
   }
-  .btn-primary:hover:not(:disabled) { box-shadow: 0 4px 28px rgba(168,85,247,.5); }
+  .btn-primary:hover:not(:disabled) { background: var(--yellow2); }
 
   .btn-green {
-    background: linear-gradient(135deg, #16a34a, var(--green));
-    color: #fff;
-    box-shadow: 0 4px 20px rgba(34,197,94,.3);
+    background: var(--green);
+    color: var(--black);
   }
+  .btn-green:hover:not(:disabled) { background: #32c45e; }
 
   .btn.success {
-    background: linear-gradient(135deg, #16a34a, var(--green)) !important;
-    box-shadow: 0 4px 20px rgba(34,197,94,.3) !important;
+    background: var(--green) !important;
+    color: var(--black) !important;
   }
-
-  /* ── Steps ── */
-  .steps {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding-bottom: 12px;
-  }
-  .step { display: flex; align-items: center; gap: 5px; font-size: 11px; font-family: var(--mono); }
-  .step-dot {
-    width: 20px; height: 20px;
-    border-radius: 50%;
-    border: 1px solid var(--muted);
-    color: var(--muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    flex-shrink: 0;
-  }
-  .step.active .step-dot { border-color: var(--purplhi); color: var(--purplhi); }
-  .step.done .step-dot   { border-color: var(--green);   color: var(--green);   background: rgba(34,197,94,.1); }
-  .step-line { flex: 1; height: 1px; background: var(--border); }
-
-  /* ── Tag ── */
-  .tag {
-    display: inline-block;
-    background: var(--purpllo);
-    border: 1px solid var(--purple);
-    color: var(--purplhi);
-    font-size: 10px;
-    font-family: var(--mono);
-    padding: 2px 8px;
-    border-radius: 10px;
-    font-weight: 700;
-  }
-  .tag.green { background: rgba(34,197,94,.1); border-color: var(--green); color: var(--green); }
 
   /* ── Divider ── */
-  .divider { height: 1px; background: var(--border); margin: 4px 0; }
+  .divider { height: 2px; background: var(--border); }
 
-  /* ── Help text ── */
-  .help-text {
-    font-size: 12px;
+  /* ── Footer info ── */
+  .footer-info {
+    font-family: var(--mono);
+    font-size: 10px;
     color: var(--muted);
     text-align: center;
-    line-height: 1.7;
-  }
-  .help-text b { color: var(--text); }
-
-  /* ── Canvas iframe overlay ── */
-  #canvasFrame {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 200;
-    border: none;
-    background: var(--bg);
-    width: 100vw;
-    height: 100vh;
+    line-height: 2;
+    padding: 16px;
   }
 
   /* ── Loading screen ── */
   .screen {
     position: fixed;
     inset: 0;
-    background: var(--bg);
+    background: var(--black);
     z-index: 300;
     display: none;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 16px;
+    gap: 20px;
     text-align: center;
     padding: 24px;
   }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--purplhi);
-    border-radius: 50%;
-    animation: spin .8s linear infinite;
+
+  .pixel-loader {
+    display: grid;
+    grid-template-columns: repeat(5, 10px);
+    grid-template-rows: repeat(5, 10px);
+    gap: 3px;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .screen-text { font-family: var(--mono); font-size: 13px; color: var(--muted); letter-spacing: .1em; }
+
+  .pixel-loader div {
+    background: var(--border);
+    animation: pixelblink 1s steps(1) infinite;
+  }
+  .pixel-loader div:nth-child(odd)  { animation-delay: 0s; }
+  .pixel-loader div:nth-child(even) { animation-delay: .5s; }
+  @keyframes pixelblink {
+    0%, 49% { background: var(--yellow); }
+    50%, 100% { background: var(--border); }
+  }
+
+  .screen-text {
+    font-family: var(--pixel);
+    font-size: 8px;
+    color: var(--muted);
+    letter-spacing: .12em;
+  }
+
+  /* ── Canvas iframe ── */
+  #canvasFrame {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    border: none;
+    background: var(--black);
+    width: 100vw;
+    height: 100vh;
+  }
 </style>
 </head>
 <body>
 
 <!-- Loading screen -->
 <div class="screen" id="loadScreen">
-  <div class="spinner"></div>
+  <div class="pixel-loader">
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+    <div></div><div></div><div></div><div></div><div></div>
+  </div>
   <div class="screen-text" id="loadText">Loading…</div>
 </div>
 
-<!-- Canvas iframe — opens on top when session is ready -->
+<!-- Canvas iframe -->
 <iframe id="canvasFrame" title="DDAO Pixel Canvas"></iframe>
 
 <div class="wrap">
 
+  <!-- Header -->
   <div class="header">
-    <div class="logo-ring">🎨</div>
-    <h1>DDAO Pixel Canvas</h1>
-    <p>Connect your wallet, buy pixels, and paint the canvas</p>
+    <div class="collab-badge">JOINT VENTURE</div>
+    <h1>BASIC × DONKEY<br>PIXEL CANVAS</h1>
+    <div class="header-sub">Connect → Buy pixels → Paint the canvas</div>
+  </div>
+
+  <!-- Viewer bar -->
+  <div class="viewer-bar">
+    <span>Just here to look?</span>
+    <a class="viewer-link" href="https://basicquilt.github.io/puffin-swap-redirect/pixelCanvas/viewer.html" target="_blank" rel="noopener">▶ VIEW CANVAS</a>
   </div>
 
   <!-- Status box -->
@@ -407,13 +492,13 @@
   <!-- Step 1: Connect Wallet -->
   <div class="card" id="cardConnect">
     <div class="card-header">
-      <span class="card-title">Step 1 — Connect Wallet</span>
+      <span class="card-title">01 — Connect Wallet</span>
       <span class="tag" id="connectTag">Required</span>
     </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+    <div class="card-body">
       <div class="wallet-row">
-        <button class="wallet-btn" id="btnPera"  onclick="connectWallet('pera')">🔵 Pera</button>
-        <button class="wallet-btn" id="btnDefly" onclick="connectWallet('defly')">🟢 Defly</button>
+        <button class="wallet-btn" id="btnPera"  onclick="connectWallet('pera')">PERA</button>
+        <button class="wallet-btn" id="btnDefly" onclick="connectWallet('defly')">DEFLY</button>
       </div>
       <div class="addr-box" id="addrBox">
         Connected: <span id="addrDisplay">—</span>
@@ -424,10 +509,10 @@
   <!-- Step 2: Balance + Buy -->
   <div class="card disabled" id="cardBuy">
     <div class="card-header">
-      <span class="card-title">Step 2 — Pixel Balance</span>
+      <span class="card-title">02 — Pixel Balance</span>
       <span class="tag" id="balTag">—</span>
     </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:14px;">
+    <div class="card-body">
 
       <div class="balance-grid">
         <div class="bal-cell">
@@ -436,13 +521,13 @@
         </div>
         <div class="bal-cell">
           <div class="bal-label">DDAO Balance</div>
-          <div class="bal-value cyan" id="ddaoBal">—</div>
+          <div class="bal-value alt" id="ddaoBal">—</div>
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <div style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);">Buy a Pixel Pack</div>
+      <div class="pack-section-label">Buy a pixel pack</div>
 
       <div class="pack-grid">
         <div class="pack-card" data-size="1"   data-price="100"  onclick="selectPack(this)">
@@ -480,20 +565,20 @@
   <!-- Step 3: Place Pixels -->
   <div class="card disabled" id="cardPlace">
     <div class="card-header">
-      <span class="card-title">Step 3 — Place Your Pixels</span>
+      <span class="card-title">03 — Place Your Pixels</span>
     </div>
-    <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
-      <div class="help-text">
-        Opens the live canvas where you can click to place your pixels.<br>
-        <b>Blue shimmer</b> = protected pixel (cannot overwrite for 1 hour)
+    <div class="card-body">
+      <div class="footer-info" style="padding:0; text-align:left;">
+        Opens the live canvas. Click any tile to place a pixel.<br>
+        <span style="color: #5b9fff;">Blue shimmer</span> = protected for 1 hour.
       </div>
       <button class="btn btn-green" id="btnPlace" onclick="openCanvas()">
-        🎨 Open Canvas
+        Open Canvas →
       </button>
     </div>
   </div>
 
-  <div class="help-text">
+  <div class="footer-info">
     DDAO Asset ID: 3214347764 · Canvas resets every 30 days<br>
     Pixels are protected for 1 hour after placement
   </div>
@@ -501,15 +586,13 @@
 </div>
 
 <script>
-// ── Config ─────────────────────────────────────────────────────────────────────
 const DDAO_ASSET_ID    = 3214347764;
 const TREASURY_ADDRESS = 'UUFUZFO24QMLADKFTYNV63EU6GXKV4AF6JR3ER5PA7YWBBFZXW4RMMBPQA';
 const ALGOD_URL        = 'https://mainnet-api.algonode.cloud';
 const INDEXER_URL      = 'https://mainnet-idx.4160.nodely.dev';
 const API_BASE         = 'https://basicworld.vercel.app';
-const CANVAS_URL       = 'https://basicquilt.github.io/puffin-swap-redirect/pixelCanvas/'; // ← update this
+const CANVAS_URL       = 'https://basicquilt.github.io/puffin-swap-redirect/pixelCanvas/';
 
-// ── Wallet constructor resolution (same pattern as your raffle page) ────────────
 function resolveConstructor(candidates) {
   for (var i = 0; i < candidates.length; i++) {
     var parts = candidates[i].split('.');
@@ -530,7 +613,6 @@ if (!PeraWalletConnect || !DeflyWalletConnect) {
   console.error('Wallet scripts failed to load');
 }
 
-// ── State ──────────────────────────────────────────────────────────────────────
 let userAddress   = null;
 let activeWallet  = null;
 let walletType    = null;
@@ -541,7 +623,6 @@ let pixelBalance  = 0;
 const peraWallet  = PeraWalletConnect  ? new PeraWalletConnect()  : null;
 const deflyWallet = DeflyWalletConnect ? new DeflyWalletConnect() : null;
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 function showStatus(type, msg) {
   const el = document.getElementById('statusBox');
   el.className = 'status-box show status-' + type;
@@ -550,8 +631,7 @@ function showStatus(type, msg) {
 function clearStatus() { document.getElementById('statusBox').className = 'status-box'; }
 
 function enableCard(id) {
-  const el = document.getElementById(id);
-  el.classList.remove('disabled');
+  document.getElementById(id).classList.remove('disabled');
 }
 
 function showLoad(text) {
@@ -560,10 +640,9 @@ function showLoad(text) {
 }
 function hideLoad() { document.getElementById('loadScreen').style.display = 'none'; }
 
-// ── Wallet connect ─────────────────────────────────────────────────────────────
 async function connectWallet(type) {
   if (!peraWallet || !deflyWallet) {
-    showStatus('error', '⚠️ Wallet scripts failed to load. Please hard-refresh and try again.');
+    showStatus('error', 'Wallet scripts failed to load. Please hard-refresh and try again.');
     return;
   }
   try {
@@ -595,7 +674,6 @@ async function connectWallet(type) {
   }
 }
 
-// Auto-reconnect Pera on load
 if (peraWallet) {
   peraWallet.reconnectSession().then(accounts => {
     if (accounts && accounts.length) {
@@ -614,10 +692,8 @@ if (peraWallet) {
   }).catch(() => {});
 }
 
-// ── Load balances ──────────────────────────────────────────────────────────────
 async function loadBalance() {
   try {
-    // Pixel pack balance from Vercel API → Turso
     const res  = await fetch(`${API_BASE}/api/balance?address=${encodeURIComponent(userAddress)}`);
     const data = await res.json();
     pixelBalance = data.packBalance || 0;
@@ -627,7 +703,6 @@ async function loadBalance() {
 
     if (pixelBalance > 0) enableCard('cardPlace');
 
-    // DDAO balance from Algorand indexer
     try {
       const iRes   = await fetch(`${INDEXER_URL}/v2/accounts/${userAddress}`);
       const iData  = await iRes.json();
@@ -644,7 +719,6 @@ async function loadBalance() {
   }
 }
 
-// ── Pack selection ─────────────────────────────────────────────────────────────
 function selectPack(el) {
   document.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
@@ -656,13 +730,12 @@ function selectPack(el) {
   btn.textContent = `Buy ${selectedSize} pixel${selectedSize > 1 ? 's' : ''} — ${selectedPrice.toLocaleString()} DDAO`;
 }
 
-// ── Buy pack ───────────────────────────────────────────────────────────────────
 async function buyPack() {
   if (!activeWallet || !userAddress || !selectedSize) return;
 
   const btn    = document.getElementById('btnBuy');
   btn.disabled = true;
-  btn.textContent = '⏳ Waiting for wallet approval…';
+  btn.textContent = 'Waiting for wallet…';
   clearStatus();
 
   try {
@@ -684,15 +757,14 @@ async function buyPack() {
     const txnGroup   = [{ txn, signers: [userAddress] }];
     const signedTxns = await activeWallet.signTransaction([txnGroup]);
 
-    btn.textContent = '⏳ Submitting…';
+    btn.textContent = 'Submitting…';
     const { txId } = await algodClient.sendRawTransaction(signedTxns).do();
 
-    btn.textContent = '⏳ Confirming on-chain…';
+    btn.textContent = 'Confirming on-chain…';
     await algosdk.waitForConfirmation(algodClient, txId, 6);
 
-    btn.textContent = '⏳ Crediting pixels…';
+    btn.textContent = 'Crediting pixels…';
 
-    // Tell Vercel API to verify and credit
     const confirmRes = await fetch(`${API_BASE}/api/pack`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -705,17 +777,15 @@ async function buyPack() {
     document.getElementById('pixelBal').textContent = pixelBalance;
     document.getElementById('balTag').textContent   = `${pixelBalance} px`;
 
-    btn.textContent = `✅ ${selectedSize} pixel${selectedSize > 1 ? 's' : ''} added!`;
+    btn.textContent = `✓ ${selectedSize} pixel${selectedSize > 1 ? 's' : ''} added!`;
     btn.classList.add('success');
     btn.onclick = null;
 
     showStatus('success',
-      `✅ Confirmed! <b>${selectedSize} pixel${selectedSize > 1 ? 's' : ''}</b> added to your balance.<br>` +
-      `Total balance: <b>${pixelBalance} pixels</b>`
+      `✓ Confirmed! ${selectedSize} pixel${selectedSize > 1 ? 's' : ''} added to your balance. Total: ${pixelBalance} pixels`
     );
 
     enableCard('cardPlace');
-
     document.querySelectorAll('.pack-card').forEach(c => c.classList.remove('selected'));
     selectedSize = selectedPrice = null;
 
@@ -732,18 +802,17 @@ async function buyPack() {
       ? `Buy ${selectedSize} pixel${selectedSize > 1 ? 's' : ''} — ${selectedPrice.toLocaleString()} DDAO`
       : 'Select a pack above';
     const msg = err.message || 'Unknown error';
-    showStatus('error', '⚠️ ' + (msg.includes('cancelled') ? 'Transaction cancelled.' : msg));
+    showStatus('error', msg.includes('cancelled') ? 'Transaction cancelled.' : msg);
   }
 }
 
-// ── Open canvas ────────────────────────────────────────────────────────────────
 async function openCanvas() {
   if (!userAddress || pixelBalance <= 0) {
     showStatus('warn', 'You need pixels to place. Buy a pack first!');
     return;
   }
 
-  showLoad('Creating your canvas session…');
+  showLoad('Creating canvas session…');
 
   try {
     const res  = await fetch(`${API_BASE}/api/session?action=create`, {
@@ -756,13 +825,10 @@ async function openCanvas() {
 
     hideLoad();
 
-    // Open canvas page in full-screen iframe
-    // Canvas page will postMessage('canvas-done') when user saves
     const frame = document.getElementById('canvasFrame');
     frame.src   = `${CANVAS_URL}?gist=${data.gistId}&webMode=1&address=${encodeURIComponent(userAddress)}`;
     frame.style.display = 'block';
 
-    // Listen for canvas page to signal completion
     const onMessage = async (e) => {
       if (e.data?.type !== 'canvas-done') return;
       window.removeEventListener('message', onMessage);
@@ -770,7 +836,6 @@ async function openCanvas() {
       frame.style.display = 'none';
       frame.src = '';
 
-      // Submit placements to Vercel API
       if (e.data.gistId) {
         showLoad('Submitting your pixels…');
         try {
@@ -785,8 +850,7 @@ async function openCanvas() {
             document.getElementById('pixelBal').textContent = pixelBalance;
             document.getElementById('balTag').textContent   = `${pixelBalance} px`;
             showStatus('success',
-              `✅ <b>${submitData.results.placed.length} pixel${submitData.results.placed.length !== 1 ? 's' : ''}</b> placed on the canvas!<br>` +
-              `Remaining balance: <b>${pixelBalance} pixels</b>`
+              `✓ ${submitData.results.placed.length} pixel${submitData.results.placed.length !== 1 ? 's' : ''} placed! Remaining balance: ${pixelBalance} pixels`
             );
           } else {
             showStatus('warn', 'Some pixels could not be placed: ' + submitData.error);
