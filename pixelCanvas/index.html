@@ -817,14 +817,32 @@ btnSave.addEventListener('click', async () => {
   btnSave.textContent = 'Saving…';
 
   try {
-    await patchGist(gistId, 'pixel-session.json', { ...SESSION, placements, status: 'submitted' });
+    if (webMode && webAddr) {
+      // ── Web mode: patch Gist then call Vercel submit API directly ─────────
+      // No Discord needed — Vercel handles placement and balance deduction
+      await patchGist(gistId, 'pixel-session.json', { ...SESSION, placements, status: 'submitted' });
 
-    if (webMode && window.parent !== window) {
-      // Web app mode — notify parent canvas-app to handle submission
-      window.parent.postMessage({ type: 'canvas-done', gistId }, '*');
+      btnSave.textContent = 'Submitting pixels…';
+
+      const res  = await fetch(`https://basicworld.vercel.app/api/session?action=submit`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ address: webAddr, gistId }),
+      });
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.error || 'Submission failed');
+
+      const placed = data.results?.placed?.length || 0;
+      doneSubText.innerHTML =
+        `<b>${placed} pixel${placed !== 1 ? 's' : ''}</b> placed on the canvas!<br>` +
+        `Remaining balance: <b>${data.newBalance} pixel${data.newBalance !== 1 ? 's' : ''}</b>`;
+
       doneScreen.style.display = 'flex';
+
     } else {
-      // Discord mode — show done screen, user goes back to Discord
+      // ── Discord mode: patch Gist, user goes back to Discord ───────────────
+      await patchGist(gistId, 'pixel-session.json', { ...SESSION, placements, status: 'submitted' });
       doneScreen.style.display = 'flex';
     }
   } catch (e) {
