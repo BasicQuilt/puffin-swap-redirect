@@ -848,9 +848,21 @@ function doZoom(factor) {
   applyXY();
 }
 
-document.getElementById('zIn').addEventListener('click',    () => doZoom(1.35));
-document.getElementById('zOut').addEventListener('click',   () => doZoom(0.74));
-document.getElementById('zReset').addEventListener('click', () => fitView());
+function addZoomListener(id, fn) {
+  const el = document.getElementById(id);
+  // touchend fires reliably even when parent has touch-action:none
+  el.addEventListener('touchend', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    fn();
+  }, { passive: false });
+  // keep click for desktop
+  el.addEventListener('click', fn);
+}
+
+addZoomListener('zIn',    () => doZoom(1.35));
+addZoomListener('zOut',   () => doZoom(0.74));
+addZoomListener('zReset', () => fitView());
 
 // ── Palette ────────────────────────────────────────────────────────────────────
 function buildPalette() {
