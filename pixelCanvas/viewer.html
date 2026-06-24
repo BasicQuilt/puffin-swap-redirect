@@ -297,7 +297,7 @@
   /* ── Footer ── */
   .footer {
     font-family: var(--mono);
-    font-size: 10px;
+    font-size: 11px;
     color: var(--muted);
     text-align: center;
     line-height: 2;
@@ -309,6 +309,31 @@
     text-decoration: none;
   }
   .footer a:hover { text-decoration: underline; }
+
+  /* ── Just placed toast ── */
+  .placed-toast {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: var(--offblack);
+    border: 2px solid var(--border2);
+    border-left: 3px solid var(--green);
+    padding: 10px 18px;
+    font-family: var(--pixel);
+    font-size: 7px;
+    color: var(--green);
+    letter-spacing: .06em;
+    z-index: 50;
+    opacity: 0;
+    transition: opacity .3s, transform .3s;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .placed-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 </style>
 </head>
 <body>
@@ -321,8 +346,11 @@
     <div></div><div></div><div></div><div></div><div></div>
     <div></div><div></div><div></div><div></div><div></div>
   </div>
-  <div class="load-text">Loading canvas…</div>
+  <div class="load-text" id="loadText">Loading canvas…</div>
 </div>
+
+<!-- Toast shown when arriving from pixel placement -->
+<div class="placed-toast" id="placedToast">✓ Your pixels have been placed!</div>
 
 <div class="page">
 
@@ -371,36 +399,56 @@
   </div>
 
   <div class="footer">
-    Hover to inspect · Click to pin pixel info · Canvas auto-refreshes every 30s<br>
-    Buy pixels on <a href="https://basicquilt.github.io/puffin-swap-redirect/canvas/" target="_blank" rel="noopener">the web</a> or in the Basic &amp; Donkey Discord servers
+    Hover to inspect · Click to pin pixel info · Auto-refreshes every 30s<br>
+    Buy pixels on <a href="https://basicquilt.github.io/puffin-swap-redirect/" target="_blank" rel="noopener">the web</a> or in the Basic &amp; Donkey Discord servers
   </div>
 
 </div>
 
 <script>
+// ── Config ─────────────────────────────────────────────────────────────────────
 const CANVAS_STATE_GIST_ID = '65adc252cd7c38d8b03e74e268ea7340';
 const REFRESH_INTERVAL_MS  = 30000;
 const PIXEL_SIZE           = 8;
 
+// ── Check if arriving from canvas placement ────────────────────────────────────
+const autoRefresh = new URLSearchParams(location.search).get('refresh') === '1';
+
+// ── State ──────────────────────────────────────────────────────────────────────
 let CANVAS_STATE = {};
 let W = 64, H = 64;
 let pinnedPixel  = null;
 let countdown    = 30;
 
-const canvas      = document.getElementById('pixelCanvas');
-const ctx         = canvas.getContext('2d');
-const loadScreen  = document.getElementById('loadScreen');
-const coordTip    = document.getElementById('coordTip');
-const pixelPopup  = document.getElementById('pixelPopup');
-const liveDot     = document.getElementById('liveDot');
-const liveText    = document.getElementById('liveText');
+// ── DOM ────────────────────────────────────────────────────────────────────────
+const canvas       = document.getElementById('pixelCanvas');
+const ctx          = canvas.getContext('2d');
+const loadScreen   = document.getElementById('loadScreen');
+const coordTip     = document.getElementById('coordTip');
+const pixelPopup   = document.getElementById('pixelPopup');
+const liveDot      = document.getElementById('liveDot');
+const liveText     = document.getElementById('liveText');
+const placedToast  = document.getElementById('placedToast');
 
+// ── Boot ───────────────────────────────────────────────────────────────────────
 (async () => {
   await loadCanvas();
   loadScreen.style.display = 'none';
+
+  // If arriving from pixel placement show toast and do a second load
+  // after 2 seconds to pick up the freshly pushed canvas state Gist
+  if (autoRefresh) {
+    placedToast.classList.add('show');
+    setTimeout(() => placedToast.classList.remove('show'), 4000);
+    setTimeout(async () => {
+      await loadCanvas();
+    }, 2000);
+  }
+
   startRefreshCycle();
 })();
 
+// ── Load canvas state from Gist ────────────────────────────────────────────────
 async function loadCanvas() {
   liveDot.classList.add('loading');
   liveText.textContent = 'UPDATING…';
@@ -433,6 +481,7 @@ async function loadCanvas() {
   liveText.textContent = 'LIVE';
 }
 
+// ── Draw ───────────────────────────────────────────────────────────────────────
 function drawCanvas() {
   ctx.fillStyle = '#FFFFFF';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -455,6 +504,7 @@ function drawCanvas() {
     }
   }
 
+  // Subtle grid
   ctx.strokeStyle = 'rgba(0,0,0,0.07)';
   ctx.lineWidth   = 0.5;
   for (let x = 0; x <= W; x++) {
@@ -484,6 +534,7 @@ function highlightPixel(x, y) {
   );
 }
 
+// ── Stats ──────────────────────────────────────────────────────────────────────
 function updateStats(state) {
   const placed  = Object.keys(state.pixels || {}).length;
   const total   = W * H;
@@ -498,12 +549,14 @@ function updateStats(state) {
   document.getElementById('statUpdated').textContent = updated;
 }
 
+// ── Refresh cycle ──────────────────────────────────────────────────────────────
 function startRefreshCycle() {
   setTimeout(() => {
     loadCanvas().then(() => startRefreshCycle());
   }, REFRESH_INTERVAL_MS);
 }
 
+// ── Canvas interaction ─────────────────────────────────────────────────────────
 function getCoords(e) {
   const rect   = canvas.getBoundingClientRect();
   const scaleX = canvas.width  / rect.width;
@@ -516,9 +569,9 @@ function getCoords(e) {
 }
 
 function showPopup(x, y, clientX, clientY) {
-  const key   = `${x},${y}`;
-  const pixel = CANVAS_STATE[key];
-  const color = pixel?.color || '#FFFFFF';
+  const key         = `${x},${y}`;
+  const pixel       = CANVAS_STATE[key];
+  const color       = pixel?.color || '#FFFFFF';
   const isProtected = pixel?.protectedUntil > Date.now();
   const remaining   = isProtected
     ? Math.ceil((pixel.protectedUntil - Date.now()) / 60000) + ' min'
@@ -545,6 +598,7 @@ function showPopup(x, y, clientX, clientY) {
   pixelPopup.style.display = 'block';
 }
 
+// Hover — coord tip + popup
 canvas.addEventListener('mousemove', (e) => {
   if (pinnedPixel) return;
   const { x, y } = getCoords(e);
@@ -567,6 +621,7 @@ canvas.addEventListener('mouseleave', () => {
   pixelPopup.style.display = 'none';
 });
 
+// Click — pin/unpin pixel info
 canvas.addEventListener('click', (e) => {
   const { x, y } = getCoords(e);
   if (x < 0 || x >= W || y < 0 || y >= H) return;
@@ -581,6 +636,7 @@ canvas.addEventListener('click', (e) => {
   }
 });
 
+// Touch
 canvas.addEventListener('touchend', (e) => {
   e.preventDefault();
   const touch = e.changedTouches[0];
