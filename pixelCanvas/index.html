@@ -32,8 +32,6 @@
     color: var(--white);
     font-family: var(--sans);
     overflow: hidden;
-    /* touch-action on body intentionally NOT set to none —
-       we handle it per-element so buttons get real tap events */
     user-select: none;
     -webkit-user-select: none;
   }
@@ -111,8 +109,8 @@
     overflow: hidden;
     background: var(--offblack);
     cursor: crosshair;
-    /* touch-action none here so we get all touch events on the canvas */
     touch-action: none;
+    min-height: 0; /* important: lets flex child shrink below content size */
   }
 
   canvas {
@@ -121,7 +119,6 @@
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     transform-origin: 0 0;
-    /* Prevent canvas from being a tap target for default behaviors */
     touch-action: none;
   }
 
@@ -139,15 +136,12 @@
     z-index: 5;
   }
 
-  /* Zoom buttons — larger on mobile, explicit touch-action auto so taps work */
   .zoom-btns {
     position: absolute;
     top: 8px; left: 8px;
     display: flex;
     gap: 6px;
     z-index: 20;
-    /* CRITICAL: touch-action auto lets these receive normal tap events
-       even though the parent canvas-area has touch-action: none */
     touch-action: auto;
   }
 
@@ -163,7 +157,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Each button handles its own touch */
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
     border-radius: 2px;
@@ -182,7 +175,6 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
-    /* allow horizontal scroll on color bar */
     touch-action: pan-x;
   }
   .color-bar::-webkit-scrollbar { display: none; }
@@ -197,7 +189,6 @@
   }
 
   .swatch {
-    /* Larger hit target on mobile */
     width: 32px; height: 32px;
     flex-shrink: 0;
     cursor: pointer;
@@ -217,7 +208,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    /* buttons need normal touch handling */
     touch-action: manipulation;
   }
 
@@ -280,6 +270,27 @@
     font-size: 7px;
   }
   .save-btn:disabled .save-count { background: var(--border2); color: var(--muted); }
+
+  /* ─── Mobile layout override ──────────────────────────────────────── */
+  /* On small screens: move action bar above canvas, color bar below canvas.
+     This guarantees the Save button is always visible without scrolling. */
+  @media (max-width: 640px), (max-height: 700px) {
+    .shell {
+      flex-direction: column;
+    }
+
+    /* Re-order: top-bar → action-bar → canvas-area → color-bar */
+    .top-bar      { order: 1; }
+    .action-bar   { order: 2; border-top: none; border-bottom: 3px solid var(--black); }
+    .canvas-area  { order: 3; }
+    .color-bar    { order: 4; border-top: 2px solid var(--border); }
+
+    /* Slightly compact action bar on mobile */
+    .action-bar { padding: 6px 10px; }
+    .save-btn   { height: 42px; font-size: 7px; }
+    .sel-color  { width: 34px; height: 34px; }
+    .undo-btn   { height: 34px; padding: 0 10px; font-size: 6px; }
+  }
 
   /* ─── Toast ───────────────────────────────────────────────────────── */
   .toast {
@@ -407,6 +418,18 @@
     <div class="pill">⏱ <span class="pill-val" id="timerVal">—</span></div>
   </div>
 
+  <!-- Action bar is declared here (after top-bar) so on desktop it sits at the
+       bottom naturally. On mobile, CSS order moves it to position 2 (just below
+       the top-bar) so the Save button is always in view. -->
+  <div class="action-bar">
+    <div class="sel-color" id="selColor"></div>
+    <button class="undo-btn" id="btnUndo" type="button" disabled>↩ Undo</button>
+    <button class="save-btn" id="btnSave" type="button" disabled>
+      Save &amp; Place
+      <span class="save-count" id="saveCount">0</span>
+    </button>
+  </div>
+
   <div class="canvas-area" id="canvasArea">
     <canvas id="cvs"></canvas>
     <div class="coord-tip" id="coordTip"></div>
@@ -419,15 +442,6 @@
 
   <div class="color-bar" id="colorBar">
     <span class="color-label">Color →</span>
-  </div>
-
-  <div class="action-bar">
-    <div class="sel-color" id="selColor"></div>
-    <button class="undo-btn" id="btnUndo" type="button" disabled>↩ Undo</button>
-    <button class="save-btn" id="btnSave" type="button" disabled>
-      Save &amp; Place
-      <span class="save-count" id="saveCount">0</span>
-    </button>
   </div>
 
 </div>
@@ -703,19 +717,11 @@ area.addEventListener('wheel', e => {
   scale = ns; applyXY();
 }, { passive: false });
 
-// ── Touch (mobile) — completely rewritten ──────────────────────────────────────
-//
-// Key fixes:
-//   1. Zoom buttons use click events, not touch events on the canvas
-//   2. Single finger: pan only. Tap = touchstart + touchend with < 8px movement
-//   3. Two finger: pinch zoom with mid-point anchor — no jitter
-//   4. Finger count changes (going from 2 to 1) resets pan origin cleanly
-//   5. tap threshold raised to 10px to reduce accidental pans on mobile
-
-let touchState = 'idle'; // 'idle' | 'tap' | 'pan' | 'pinch'
-let tapStart   = null;   // { x, y } of first touch
-let panOriginX = 0, panOriginY = 0; // ox/oy when pan started
-let panStartX  = 0, panStartY  = 0; // finger position when pan started
+// ── Touch (mobile) ─────────────────────────────────────────────────────────────
+let touchState = 'idle';
+let tapStart   = null;
+let panOriginX = 0, panOriginY = 0;
+let panStartX  = 0, panStartY  = 0;
 let lastPinchDist   = 0;
 let lastPinchMidX   = 0;
 let lastPinchMidY   = 0;
@@ -723,7 +729,7 @@ let lastPinchOx     = 0;
 let lastPinchOy     = 0;
 let lastPinchScale  = 0;
 
-const TAP_THRESHOLD = 10; // px — must move less than this to count as a tap
+const TAP_THRESHOLD = 10;
 
 area.addEventListener('touchstart', e => {
   e.preventDefault();
@@ -752,7 +758,6 @@ area.addEventListener('touchmove', e => {
   e.preventDefault();
 
   if (e.touches.length === 2) {
-    // Always switch to pinch on two fingers
     if (touchState !== 'pinch') {
       touchState = 'pinch';
       const t0 = e.touches[0], t1 = e.touches[1];
@@ -770,11 +775,9 @@ area.addEventListener('touchmove', e => {
     const midY  = (t0.clientY + t1.clientY) / 2;
     const r     = area.getBoundingClientRect();
 
-    // Scale relative to initial pinch state for smoother feel
     const scaleFactor = dist / lastPinchDist;
     const ns = Math.max(.3, Math.min(14, lastPinchScale * scaleFactor));
 
-    // Anchor zoom to midpoint of initial pinch
     const anchorX = lastPinchMidX - r.left;
     const anchorY = lastPinchMidY - r.top;
     const panDX   = midX - lastPinchMidX;
@@ -790,12 +793,11 @@ area.addEventListener('touchmove', e => {
     const dx = t.clientX - panStartX;
     const dy = t.clientY - panStartY;
 
-    // Only switch to pan if moved beyond tap threshold
     if (touchState === 'tap') {
       if (Math.abs(dx) > TAP_THRESHOLD || Math.abs(dy) > TAP_THRESHOLD) {
         touchState = 'pan';
       } else {
-        return; // still within tap threshold, don't pan yet
+        return;
       }
     }
 
@@ -819,7 +821,6 @@ area.addEventListener('touchend', e => {
     }
   }
 
-  // If going from 2 fingers back to 1, reset pan state to avoid jump
   if (e.touches.length === 1 && touchState === 'pinch') {
     touchState  = 'pan';
     const t     = e.touches[0];
@@ -835,10 +836,7 @@ area.addEventListener('touchend', e => {
   }
 }, { passive: false });
 
-// ── Zoom buttons — use click for both desktop and mobile ───────────────────────
-// Using click instead of touchstart means the button's touch-action:manipulation
-// handles the tap natively and we don't fight with the canvas touch handler.
-
+// ── Zoom buttons ───────────────────────────────────────────────────────────────
 function doZoom(factor) {
   const r  = area.getBoundingClientRect();
   const cx = r.width  / 2;
