@@ -69,6 +69,15 @@
     .amount-input:focus { border-color:var(--accent); }
     .amount-input::placeholder { color:var(--muted); }
     .amount-hint { font-size:11px; color:var(--muted); margin-top:6px; padding-bottom:8px; }
+    .sep-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
+    .sep-label { font-size:11px; color:var(--muted); }
+    .sep-btn {
+      padding:4px 10px; border-radius:8px; border:1px solid var(--border2);
+      background:var(--bg); color:var(--text); font-family:var(--mono);
+      font-size:12px; cursor:pointer; transition:all .15s;
+    }
+    .sep-btn:hover { border-color:var(--accent); color:var(--accent); }
+    .sep-btn.active { border-color:var(--success); color:var(--success); background:rgba(34,201,122,.06); }
 
     .action-section { padding:4px 18px 18px; display:flex; flex-direction:column; gap:8px; }
     .sign-btn {
@@ -148,12 +157,16 @@
         <input
           class="amount-input"
           id="amount-input"
-          type="number"
-          min="0"
-          step="any"
+          type="text"
+          inputmode="decimal"
           placeholder="Enter amount…"
-          oninput="updateSignButton()"
+          oninput="formatAmountInput()"
         />
+        <div class="sep-row">
+          <span class="sep-label">Thousands separator:</span>
+          <button type="button" class="sep-btn active" id="sep-comma" onclick="setSeparatorMode('comma')">1,000</button>
+          <button type="button" class="sep-btn" id="sep-period" onclick="setSeparatorMode('period')">1.000</button>
+        </div>
         <div class="amount-hint" id="amount-hint"></div>
       </div>
 
@@ -235,6 +248,7 @@
   const ALGOD_URL = 'https://mainnet-api.algonode.cloud';
 
   let depositData  = null;
+  let separatorMode = 'comma'; // 'comma' => 1,234.56   'period' => 1.234,56
   let userAddress  = '';
   let activeWallet = null;
   let walletType   = null;
@@ -258,9 +272,57 @@
     return new TextEncoder().encode(str);
   }
 
+  function getSeparators(mode) {
+    return mode === 'period'
+      ? { thousands: '.', decimal: ',' }
+      : { thousands: ',', decimal: '.' };
+  }
+
+  function setSeparatorMode(mode) {
+    separatorMode = mode;
+    document.getElementById('sep-comma').classList.toggle('active', mode === 'comma');
+    document.getElementById('sep-period').classList.toggle('active', mode === 'period');
+    formatAmountInput();
+  }
+
+  // Reformats the amount field live as the user types, grouping the
+  // integer part with the active thousands separator (handy since most
+  // deposits here are 1,000,000+).
+  function formatAmountInput() {
+    const input = document.getElementById('amount-input');
+    const { thousands, decimal } = getSeparators(separatorMode);
+
+    let raw = input.value;
+    const decimalEsc = decimal === '.' ? '\\.' : decimal;
+    raw = raw.replace(new RegExp(`[^0-9${decimalEsc}]`, 'g'), '');
+
+    const decIdx = raw.indexOf(decimal);
+    let intPart = decIdx === -1 ? raw : raw.slice(0, decIdx);
+    let decPart = decIdx === -1 ? '' : raw.slice(decIdx + 1).replace(new RegExp(decimalEsc, 'g'), '');
+
+    intPart = intPart.replace(/^0+(?=\d)/, '');
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+
+    input.value = decIdx === -1 ? intPart : `${intPart}${decimal}${decPart}`;
+    updateSignButton();
+  }
+
+  // Converts whatever's in the amount field back to a plain JS number,
+  // regardless of which separator style is active.
+  function parseAmountInput() {
+    const { thousands, decimal } = getSeparators(separatorMode);
+    let raw = document.getElementById('amount-input').value;
+
+    const thousandsEsc = thousands === '.' ? '\\.' : thousands;
+    raw = raw.replace(new RegExp(thousandsEsc, 'g'), '');
+    if (decimal !== '.') raw = raw.replace(decimal, '.');
+
+    return parseFloat(raw);
+  }
+
   function updateSignButton() {
     if (!walletConnected || !depositData) return;
-    const raw = parseFloat(document.getElementById('amount-input').value);
+    const raw = parseAmountInput();
     const btn = document.getElementById('sign-btn');
 
     if (isNaN(raw) || raw <= 0) {
@@ -380,7 +442,7 @@
   async function sendDeposit() {
     if (!activeWallet || !depositData) return;
 
-    const inputVal = parseFloat(document.getElementById('amount-input').value);
+    const inputVal = parseAmountInput();
     if (isNaN(inputVal) || inputVal <= 0) {
       showStatus('warn', '⚠️ Please enter a valid amount.');
       return;
